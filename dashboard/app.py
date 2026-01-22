@@ -46,7 +46,7 @@ summary_df = (
 )
 
 # ---------- MA TYPE FILTER ----------
-st.markdown("### 🔎 Filter Stocks by MA Type")
+st.markdown("### Filter Stocks by MA Type")
 
 ma_filter = st.selectbox(
     "Show stocks using",
