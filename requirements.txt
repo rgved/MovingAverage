@@ -5,3 +5,4 @@ matplotlib
 fastapi
 uvicorn
 yfinance
+streamlit_aggrid
