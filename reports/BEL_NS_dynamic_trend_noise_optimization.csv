@@ -1,0 +1,6 @@
+Symbol,Volatility,TrendStrength,Noise,MA_Type,MA_Pair,Return,WinRate,Sharpe,MaxDD,Trades
+BEL.NS,1.1,0.66,95.93,SMA,12/26,0.92,100.0,-0.5,-10.26,1
+BEL.NS,1.1,0.66,95.93,SMA,10/20,0.0,0.0,-0.52,-10.26,0
+BEL.NS,1.1,0.66,95.93,SMA,50/100,0.0,0.0,-0.52,-10.26,0
+BEL.NS,1.1,0.66,95.93,SMA,50/200,0.0,0.0,-0.52,-10.26,0
+BEL.NS,1.1,0.66,95.93,SMA,20/50,-2.09,0.0,-0.38,-10.26,1
