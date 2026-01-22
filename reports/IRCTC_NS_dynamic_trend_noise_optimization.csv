@@ -1,0 +1,6 @@
+Symbol,Volatility,TrendStrength,Noise,MA_Type,MA_Pair,Return,WinRate,Sharpe,MaxDD,Trades
+IRCTC.NS,1.63,9.7,58.34,EMA,20/50,-0.1,0.0,-2.98,-15.48,1
+IRCTC.NS,1.63,9.7,58.34,EMA,50/100,-0.1,0.0,-2.98,-15.48,1
+IRCTC.NS,1.63,9.7,58.34,EMA,50/200,-0.1,0.0,-2.98,-15.48,1
+IRCTC.NS,1.63,9.7,58.34,EMA,12/26,-0.63,0.0,-2.57,-13.41,2
+IRCTC.NS,1.63,9.7,58.34,EMA,10/20,-2.16,0.0,-2.82,-14.72,2

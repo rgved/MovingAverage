@@ -1,0 +1,6 @@
+Symbol,Volatility,TrendStrength,Noise,MA_Type,MA_Pair,Return,WinRate,Sharpe,MaxDD,Trades
+MRPL.NS,4.03,4.18,92.5,SMA,10/20,0.0,0.0,0.32,-24.15,0
+MRPL.NS,4.03,4.18,92.5,SMA,20/50,0.0,0.0,0.32,-24.15,0
+MRPL.NS,4.03,4.18,92.5,SMA,50/100,0.0,0.0,0.32,-24.15,0
+MRPL.NS,4.03,4.18,92.5,SMA,50/200,0.0,0.0,0.32,-24.15,0
+MRPL.NS,4.03,4.18,92.5,SMA,12/26,-6.6,0.0,0.7,-24.15,1
