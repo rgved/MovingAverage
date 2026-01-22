@@ -6,7 +6,8 @@ from backtest import backtest_strategy
 import os
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-REPORTS_DIR = os.path.join(BASE_DIR, "data", "reports")
+REPORTS_DIR = os.path.join(BASE_DIR, "reports")
+
 os.makedirs(REPORTS_DIR, exist_ok=True)
 
 # ---------- Compute Volatility ----------
