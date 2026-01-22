@@ -1,0 +1,6 @@
+Symbol,Volatility,TrendStrength,Noise,MA_Type,MA_Pair,Return,WinRate,Sharpe,MaxDD,Trades
+INFY.NS,1.6,0.54,97.19,SMA,10/20,0,0,2.41,-5.55,0
+INFY.NS,1.6,0.54,97.19,SMA,12/26,0,0,2.41,-5.55,0
+INFY.NS,1.6,0.54,97.19,SMA,20/50,0,0,2.41,-5.55,0
+INFY.NS,1.6,0.54,97.19,SMA,50/100,0,0,2.41,-5.55,0
+INFY.NS,1.6,0.54,97.19,SMA,50/200,0,0,2.41,-5.55,0

@@ -1,0 +1,6 @@
+Symbol,Volatility,TrendStrength,Noise,MA_Type,MA_Pair,Return,WinRate,Sharpe,MaxDD,Trades
+LT.NS,0.93,2.6,82.94,SMA,12/26,1.02,100.0,1.77,-4.57,1
+LT.NS,0.93,2.6,82.94,SMA,50/100,0.0,0.0,1.85,-4.57,0
+LT.NS,0.93,2.6,82.94,SMA,20/50,0.0,0.0,1.85,-4.57,0
+LT.NS,0.93,2.6,82.94,SMA,50/200,0.0,0.0,1.85,-4.57,0
+LT.NS,0.93,2.6,82.94,SMA,10/20,-0.71,0.0,1.95,-4.57,1

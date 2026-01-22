@@ -1,0 +1,6 @@
+Symbol,Volatility,TrendStrength,Noise,MA_Type,MA_Pair,Return,WinRate,Sharpe,MaxDD,Trades
+UBL.NS,0.98,10.51,33.93,EMA,10/20,0.0,0.0,-5.38,-21.2,0
+UBL.NS,0.98,10.51,33.93,EMA,12/26,0.0,0.0,-5.38,-21.2,0
+UBL.NS,0.98,10.51,33.93,EMA,50/100,0.0,0.0,-5.38,-21.2,0
+UBL.NS,0.98,10.51,33.93,EMA,50/200,0.0,0.0,-5.38,-21.2,0
+UBL.NS,0.98,10.51,33.93,EMA,20/50,-2.68,0.0,-5.43,-21.2,1

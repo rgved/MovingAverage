@@ -1,0 +1,6 @@
+Symbol,Volatility,TrendStrength,Noise,MA_Type,MA_Pair,Return,WinRate,Sharpe,MaxDD,Trades
+PAYTM.NS,1.82,6.7,74.67,EMA,20/50,-6.91,0.0,-0.12,-8.11,4
+PAYTM.NS,1.82,6.7,74.67,EMA,12/26,-7.05,0.0,-0.64,-9.39,5
+PAYTM.NS,1.82,6.7,74.67,EMA,10/20,-7.52,0.0,-0.46,-9.39,5
+PAYTM.NS,1.82,6.7,74.67,EMA,50/200,-7.72,0.0,-0.72,-10.0,4
+PAYTM.NS,1.82,6.7,74.67,EMA,50/100,-10.1,0.0,0.04,-8.38,5

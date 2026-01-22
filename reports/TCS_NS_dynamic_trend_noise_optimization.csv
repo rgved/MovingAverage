@@ -1,0 +1,6 @@
+Symbol,Volatility,TrendStrength,Noise,MA_Type,MA_Pair,Return,WinRate,Sharpe,MaxDD,Trades
+TCS.NS,0.99,0.84,94.63,SMA,20/50,0.0,0.0,-0.21,-9.08,0
+TCS.NS,0.99,0.84,94.63,SMA,50/200,0.0,0.0,-0.21,-9.08,0
+TCS.NS,0.99,0.84,94.63,SMA,50/100,0.0,0.0,-0.21,-9.08,0
+TCS.NS,0.99,0.84,94.63,SMA,12/26,-0.94,0.0,-0.37,-9.08,1
+TCS.NS,0.99,0.84,94.63,SMA,10/20,-2.67,0.0,-0.16,-8.86,1

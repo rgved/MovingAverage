@@ -1,0 +1,6 @@
+Symbol,Volatility,TrendStrength,Noise,MA_Type,MA_Pair,Return,WinRate,Sharpe,MaxDD,Trades
+OIL.NS,2.08,6.03,82.16,SMA,10/20,2.51,100.0,0.81,-9.17,1
+OIL.NS,2.08,6.03,82.16,SMA,50/200,0.0,0.0,1.29,-9.02,0
+OIL.NS,2.08,6.03,82.16,SMA,50/100,0.0,0.0,1.29,-9.02,0
+OIL.NS,2.08,6.03,82.16,SMA,12/26,-1.2,0.0,1.25,-9.02,1
+OIL.NS,2.08,6.03,82.16,SMA,20/50,-2.07,0.0,1.67,-9.02,1
