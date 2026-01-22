@@ -1,0 +1,6 @@
+Symbol,Volatility,TrendStrength,Noise,MA_Type,MA_Pair,Return,WinRate,Sharpe,MaxDD,Trades
+ACC.NS,1.03,1.31,91.51,SMA,12/26,0.0,0.0,-1.63,-11.33,0
+ACC.NS,1.03,1.31,91.51,SMA,20/50,0.0,0.0,-1.63,-11.33,0
+ACC.NS,1.03,1.31,91.51,SMA,50/100,0.0,0.0,-1.63,-11.33,0
+ACC.NS,1.03,1.31,91.51,SMA,50/200,0.0,0.0,-1.63,-11.33,0
+ACC.NS,1.03,1.31,91.51,SMA,10/20,-1.21,0.0,-1.85,-12.06,1
