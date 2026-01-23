@@ -163,4 +163,4 @@ else:
 
 # ---------- FOOTER ----------
 st.markdown("---")
-st.caption("© 2025 Adaptive Finance | Professional Trading Dashboard")
+st.caption("")
