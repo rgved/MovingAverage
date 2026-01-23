@@ -10,7 +10,7 @@ from st_aggrid import AgGrid, GridOptionsBuilder, GridUpdateMode
 # ---------- PATH SETUP ----------
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 reports_dir = os.path.join(BASE_DIR, "reports")
-data_dir = os.path.join(BASE_DIR, "data", "trimmed")
+data_dir = os.path.join(BASE_DIR, "src","data", "trimmed")
 
 # ---------- PAGE CONFIG ----------
 st.set_page_config(page_title="Adaptive MA Strategy Dashboard", layout="wide")
@@ -45,21 +45,40 @@ summary_df = (
     .reset_index(drop=True)
 )
 
-# ---------- MA TYPE FILTER ----------
-st.markdown("### Filter Stocks by MA Type")
+# ---------- STRATEGY FILTERS ----------
+st.markdown("### Strategy Filters")
 
-ma_filter = st.selectbox(
-    "Show stocks using",
-    ["All", "EMA", "SMA"],
-    index=0
-)
+col1, col2, col3 = st.columns(3)
 
-if ma_filter != "All":
-    filtered_df = summary_df[summary_df["MA Type"] == ma_filter].reset_index(drop=True)
-else:
-    filtered_df = summary_df.copy()
+with col1:
+    ma_type_filter = st.selectbox("MA Type", ["EMA", "SMA"])
 
-st.subheader("📊 Stock Performance Summary (Click a row)")
+with col2:
+    fast_ma = st.selectbox("Fast MA (MA1)", list(range(5, 51, 5)))
+
+with col3:
+    slow_ma = st.selectbox("Slow MA (MA2)", list(range(10, 101, 10)))
+
+# ---------- VALIDATION ----------
+if fast_ma >= slow_ma:
+    st.warning("Fast MA must be smaller than Slow MA")
+    st.stop()
+
+selected_pair = f"{fast_ma}/{slow_ma}"
+
+# ---------- FILTER DATA ----------
+filtered_df = summary_df[
+    (summary_df["MA Type"] == ma_type_filter) &
+    (summary_df["MA Pair"] == selected_pair)
+].reset_index(drop=True)
+
+if filtered_df.empty:
+    st.warning(
+        f"No stocks found for {ma_type_filter} {selected_pair}. "
+        "Try a different MA combination."
+    )
+
+st.subheader("Stock Performance Summary (Click a row)")
 
 # ---------- AGGRID CONFIG ----------
 gb = GridOptionsBuilder.from_dataframe(filtered_df)
@@ -90,7 +109,7 @@ if has_selection:
     st.subheader("📈 Stock Visualization")
 
     selected_symbol = st.selectbox(
-        "Selected stock (from table)",
+        "Selected stock",
         filtered_df["Symbol"].tolist(),
         index=filtered_df["Symbol"].tolist().index(clicked_symbol)
     )
@@ -108,22 +127,15 @@ if has_selection:
     # ---------- LOAD PRICE DATA ----------
     df = pd.read_csv(price_file)
     df["Date"] = pd.to_datetime(df["Date"], utc=True, errors="coerce").dt.tz_convert(None)
-    df = df[(df["Date"] >= "2025-08-01") & (df["Date"] <= "2025-11-07")]
     df = df.sort_values("Date")
 
-    report = pd.read_csv(report_file)
-    best = report.iloc[0]
-
-    fast, slow = map(int, best["MA_Pair"].split("/"))
-    ma_type = best["MA_Type"]
-
     # ---------- MOVING AVERAGES ----------
-    if ma_type == "EMA":
-        df["MA_Fast"] = df["Close"].ewm(span=fast, adjust=False).mean()
-        df["MA_Slow"] = df["Close"].ewm(span=slow, adjust=False).mean()
+    if ma_type_filter == "EMA":
+        df["MA_Fast"] = df["Close"].ewm(span=fast_ma, adjust=False).mean()
+        df["MA_Slow"] = df["Close"].ewm(span=slow_ma, adjust=False).mean()
     else:
-        df["MA_Fast"] = df["Close"].rolling(fast).mean()
-        df["MA_Slow"] = df["Close"].rolling(slow).mean()
+        df["MA_Fast"] = df["Close"].rolling(fast_ma).mean()
+        df["MA_Slow"] = df["Close"].rolling(slow_ma).mean()
 
     df["Signal"] = np.where(df["MA_Fast"] > df["MA_Slow"], 1, -1)
     df["Crossover"] = df["Signal"].diff()
@@ -131,8 +143,8 @@ if has_selection:
     # ---------- PLOT ----------
     fig, ax = plt.subplots(figsize=(13, 5))
     ax.plot(df["Date"], df["Close"], label="Close", color="gray", alpha=0.6)
-    ax.plot(df["Date"], df["MA_Fast"], label=f"{ma_type} {fast}", color="green")
-    ax.plot(df["Date"], df["MA_Slow"], label=f"{ma_type} {slow}", color="orange")
+    ax.plot(df["Date"], df["MA_Fast"], label=f"{ma_type_filter} {fast_ma}", color="green")
+    ax.plot(df["Date"], df["MA_Slow"], label=f"{ma_type_filter} {slow_ma}", color="orange")
 
     buys = df[df["Crossover"] == 2]
     sells = df[df["Crossover"] == -2]
@@ -140,14 +152,14 @@ if has_selection:
     ax.scatter(buys["Date"], buys["Close"], marker="^", color="lime", s=80, label="Buy")
     ax.scatter(sells["Date"], sells["Close"], marker="v", color="red", s=80, label="Sell")
 
-    ax.set_title(f"{selected_symbol} | {ma_type} ({fast}/{slow})")
+    ax.set_title(f"{selected_symbol} | {ma_type_filter} ({fast_ma}/{slow_ma})")
     ax.legend()
     ax.grid(alpha=0.3)
 
     st.pyplot(fig)
 
 else:
-    st.info("⬆ Click a stock row in the table to view its chart")
+    st.info("⬆ Select a stock from the table to view its chart")
 
 # ---------- FOOTER ----------
 st.markdown("---")
