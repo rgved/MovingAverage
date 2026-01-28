@@ -3,8 +3,13 @@
 import pandas as pd
 import numpy as np
 import os
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
+# ---------- PATH SETUP ----------
+SRC_DIR = os.path.dirname(os.path.abspath(__file__))   # .../src
+PROJECT_ROOT = os.path.dirname(SRC_DIR)                # project root
+
+RAW_DATA_DIR = os.path.join(PROJECT_ROOT, "data", "raw")
+PROCESSED_DATA_DIR = os.path.join(PROJECT_ROOT, "data", "processed")
 
 # ---------- Moving Averages ----------
 def compute_sma(df, column="Close", window=20):
@@ -25,14 +30,14 @@ def compute_wma(df, column="Close", window=20):
 def add_moving_averages(df, ma_type="SMA", fast=10, slow=20):
     df = df.copy()
     if ma_type.upper() == "SMA":
-        df[f"MA_Fast"] = compute_sma(df, "Close", fast)
-        df[f"MA_Slow"] = compute_sma(df, "Close", slow)
+        df["MA_Fast"] = compute_sma(df, "Close", fast)
+        df["MA_Slow"] = compute_sma(df, "Close", slow)
     elif ma_type.upper() == "EMA":
-        df[f"MA_Fast"] = compute_ema(df, "Close", fast)
-        df[f"MA_Slow"] = compute_ema(df, "Close", slow)
+        df["MA_Fast"] = compute_ema(df, "Close", fast)
+        df["MA_Slow"] = compute_ema(df, "Close", slow)
     elif ma_type.upper() == "WMA":
-        df[f"MA_Fast"] = compute_wma(df, "Close", fast)
-        df[f"MA_Slow"] = compute_wma(df, "Close", slow)
+        df["MA_Fast"] = compute_wma(df, "Close", fast)
+        df["MA_Slow"] = compute_wma(df, "Close", slow)
     else:
         raise ValueError("ma_type must be SMA, EMA, or WMA")
     return df
@@ -41,11 +46,9 @@ def add_moving_averages(df, ma_type="SMA", fast=10, slow=20):
 def generate_signals(df):
     df = df.copy()
     df["Signal"] = 0
-    df.loc[df["MA_Fast"] > df["MA_Slow"], "Signal"] = 1   # Bullish
-    df.loc[df["MA_Fast"] < df["MA_Slow"], "Signal"] = -1  # Bearish
-
-    # Identify crossover points
-    df["Crossover"] = df["Signal"].diff()  # +2 → bullish cross, -2 → bearish cross
+    df.loc[df["MA_Fast"] > df["MA_Slow"], "Signal"] = 1
+    df.loc[df["MA_Fast"] < df["MA_Slow"], "Signal"] = -1
+    df["Crossover"] = df["Signal"].diff()
     return df
 
 # ---------- Master Function ----------
@@ -54,17 +57,17 @@ def process_file(filepath, ma_type="SMA", fast=10, slow=20):
     df["Date"] = pd.to_datetime(df["Date"])
     df = df.sort_values("Date")
 
-    # Add MAs
     df = add_moving_averages(df, ma_type, fast, slow)
-    # Add signals
     df = generate_signals(df)
-
     return df
 
 # ---------- Batch Processor ----------
-def process_all(data_dir = os.path.join(BASE_DIR, "data", "raw"), out_dir = os.path.join(BASE_DIR, "data", "processed"),
+def process_all(data_dir=RAW_DATA_DIR,
+                out_dir=PROCESSED_DATA_DIR,
                 ma_type="SMA", fast=10, slow=20):
+
     os.makedirs(out_dir, exist_ok=True)
+
     for file in os.listdir(data_dir):
         if file.endswith(".csv"):
             path = os.path.join(data_dir, file)
@@ -73,16 +76,11 @@ def process_all(data_dir = os.path.join(BASE_DIR, "data", "raw"), out_dir = os.p
             df.to_csv(out_path, index=False)
             print(f"✅ Processed {file} → {out_path}")
 
+# ---------- RUN ----------
 if __name__ == "__main__":
-    # You can change these as needed
-    data_dir = os.path.join(BASE_DIR, "data", "raw")
-    out_dir  = os.path.join(BASE_DIR, "data", "processed")
-
-
-    ma_type = "EMA"    # choose: "SMA", "EMA", or "WMA"
+    ma_type = "EMA"    # SMA | EMA | WMA
     fast = 10
     slow = 20
 
-    process_all(data_dir=data_dir, out_dir=out_dir, ma_type=ma_type, fast=fast, slow=slow)
+    process_all(ma_type=ma_type, fast=fast, slow=slow)
     print("🎉 Feature extraction complete! Files saved in data/processed/")
-

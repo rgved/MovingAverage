@@ -10,7 +10,7 @@ from st_aggrid import AgGrid, GridOptionsBuilder, GridUpdateMode
 # ---------- PATH SETUP ----------
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 reports_dir = os.path.join(BASE_DIR, "reports")
-data_dir = os.path.join(BASE_DIR, "src","data", "trimmed")
+data_dir = os.path.join(BASE_DIR, "data", "trimmed")
 
 # ---------- PAGE CONFIG ----------
 st.set_page_config(page_title="Adaptive MA Strategy Dashboard", layout="wide")
@@ -20,7 +20,7 @@ if not os.path.exists(reports_dir):
     st.error(f"Reports directory not found: {reports_dir}")
     st.stop()
 
-# ---------- BUILD SUMMARY TABLE ----------
+# ---------- BUILD SUMMARY TABLE (BEST STRATEGY PER STOCK) ----------
 rows = []
 
 for file in os.listdir(reports_dir):
@@ -31,8 +31,8 @@ for file in os.listdir(reports_dir):
 
         rows.append({
             "Symbol": symbol,
-            "MA Type": best["MA_Type"],
-            "MA Pair": best["MA_Pair"],
+            "Best MA Type": best["MA_Type"],
+            "Best MA Pair": best["MA_Pair"],
             "Return (%)": round(best["Return"], 2),
             "Win Rate (%)": round(best["WinRate"], 1),
             "Sharpe": round(best["Sharpe"], 2),
@@ -45,13 +45,13 @@ summary_df = (
     .reset_index(drop=True)
 )
 
-# ---------- STRATEGY FILTERS ----------
-st.markdown("### Strategy Filters")
+# ---------- SCENARIO CONTROLS (WHAT-IF MODE) ----------
+st.markdown("### 🔎 Scenario Analysis (What-If MA Strategy)")
 
 col1, col2, col3 = st.columns(3)
 
 with col1:
-    ma_type_filter = st.selectbox("MA Type", ["EMA", "SMA"])
+    scenario_ma_type = st.selectbox("MA Type", ["EMA", "SMA"])
 
 with col2:
     fast_ma = st.selectbox("Fast MA (MA1)", list(range(5, 51, 5)))
@@ -64,29 +64,20 @@ if fast_ma >= slow_ma:
     st.warning("Fast MA must be smaller than Slow MA")
     st.stop()
 
-selected_pair = f"{fast_ma}/{slow_ma}"
+st.caption(
+    f"📌 Showing *what-if scenario* for **{scenario_ma_type} {fast_ma}/{slow_ma}** "
+    "(independent of historical optimization)"
+)
 
-# ---------- FILTER DATA ----------
-filtered_df = summary_df[
-    (summary_df["MA Type"] == ma_type_filter) &
-    (summary_df["MA Pair"] == selected_pair)
-].reset_index(drop=True)
+# ---------- TABLE ----------
+st.subheader("📊 Stock Performance Summary (Best Historical Strategy)")
 
-if filtered_df.empty:
-    st.warning(
-        f"No stocks found for {ma_type_filter} {selected_pair}. "
-        "Try a different MA combination."
-    )
-
-st.subheader("Stock Performance Summary (Click a row)")
-
-# ---------- AGGRID CONFIG ----------
-gb = GridOptionsBuilder.from_dataframe(filtered_df)
+gb = GridOptionsBuilder.from_dataframe(summary_df)
 gb.configure_selection(selection_mode="single", use_checkbox=False)
 gb.configure_grid_options(domLayout="normal")
 
 grid_response = AgGrid(
-    filtered_df,
+    summary_df,
     gridOptions=gb.build(),
     update_mode=GridUpdateMode.SELECTION_CHANGED,
     height=350,
@@ -103,25 +94,15 @@ has_selection = (
 )
 
 if has_selection:
-    clicked_symbol = selected_rows.iloc[0]["Symbol"]
+    selected_symbol = selected_rows.iloc[0]["Symbol"]
 
     st.markdown("---")
-    st.subheader("📈 Stock Visualization")
-
-    selected_symbol = st.selectbox(
-        "Selected stock",
-        filtered_df["Symbol"].tolist(),
-        index=filtered_df["Symbol"].tolist().index(clicked_symbol)
-    )
+    st.subheader("📈 Price Chart + Scenario MA Overlay")
 
     price_file = os.path.join(data_dir, f"{selected_symbol}.csv")
-    report_file = os.path.join(
-        reports_dir,
-        f"{selected_symbol.replace('.', '_')}_dynamic_trend_noise_optimization.csv"
-    )
 
-    if not os.path.exists(price_file) or not os.path.exists(report_file):
-        st.error("Required data files not found for this stock.")
+    if not os.path.exists(price_file):
+        st.error("Price data not found for this stock.")
         st.stop()
 
     # ---------- LOAD PRICE DATA ----------
@@ -129,8 +110,8 @@ if has_selection:
     df["Date"] = pd.to_datetime(df["Date"], utc=True, errors="coerce").dt.tz_convert(None)
     df = df.sort_values("Date")
 
-    # ---------- MOVING AVERAGES ----------
-    if ma_type_filter == "EMA":
+    # ---------- APPLY SCENARIO MOVING AVERAGES ----------
+    if scenario_ma_type == "EMA":
         df["MA_Fast"] = df["Close"].ewm(span=fast_ma, adjust=False).mean()
         df["MA_Slow"] = df["Close"].ewm(span=slow_ma, adjust=False).mean()
     else:
@@ -141,10 +122,12 @@ if has_selection:
     df["Crossover"] = df["Signal"].diff()
 
     # ---------- PLOT ----------
+# ---------- PLOT ----------
     fig, ax = plt.subplots(figsize=(13, 5))
+
     ax.plot(df["Date"], df["Close"], label="Close", color="gray", alpha=0.6)
-    ax.plot(df["Date"], df["MA_Fast"], label=f"{ma_type_filter} {fast_ma}", color="green")
-    ax.plot(df["Date"], df["MA_Slow"], label=f"{ma_type_filter} {slow_ma}", color="orange")
+    ax.plot(df["Date"], df["MA_Fast"], label=f"{scenario_ma_type} {fast_ma}", color="green")
+    ax.plot(df["Date"], df["MA_Slow"], label=f"{scenario_ma_type} {slow_ma}", color="orange")
 
     buys = df[df["Crossover"] == 2]
     sells = df[df["Crossover"] == -2]
@@ -152,15 +135,71 @@ if has_selection:
     ax.scatter(buys["Date"], buys["Close"], marker="^", color="lime", s=80, label="Buy")
     ax.scatter(sells["Date"], sells["Close"], marker="v", color="red", s=80, label="Sell")
 
-    ax.set_title(f"{selected_symbol} | {ma_type_filter} ({fast_ma}/{slow_ma})")
+    # ✅ FORCE X-AXIS TO SHOW LATEST DATE
+    ax.set_xlim(df["Date"].min(), df["Date"].max())
+    import matplotlib.dates as mdates
+
+    # Force latest date to appear as an x-axis tick
+    latest_date = df["Date"].max()
+
+    ticks = ax.get_xticks()
+    tick_dates = [mdates.num2date(t).replace(tzinfo=None) for t in ticks]
+
+    if latest_date not in tick_dates:
+        tick_dates.append(latest_date)
+
+    ax.set_xticks(tick_dates)
+    ax.xaxis.set_major_formatter(mdates.DateFormatter("%Y-%m-%d"))
+    fig.autofmt_xdate(rotation=30)
+
+
+    # ✅ Highlight latest price (MUST be before st.pyplot)
+    latest_row = df.iloc[-1]
+    ax.scatter(
+        latest_row["Date"],
+        latest_row["Close"],
+        color="black",
+        s=90,
+        zorder=5,
+        label="Latest"
+    )
+    ax.annotate(
+    latest_date.strftime("%Y-%m-%d"),
+    xy=(latest_date, latest_row["Close"]),
+    xytext=(10, -15),
+    textcoords="offset points",
+    fontsize=9,
+    color="black",
+    arrowprops=dict(arrowstyle="->", alpha=0.4)
+    )
+
+
+    # ✅ Regime label
+    current_signal = df.iloc[-1]["Signal"]
+    regime = "Bullish 🟢" if current_signal == 1 else "Bearish 🔴"
+
+    ax.text(
+        0.01, 0.95,
+        f"Current Regime: {regime}",
+        transform=ax.transAxes,
+        fontsize=11,
+        verticalalignment="top",
+        bbox=dict(boxstyle="round", alpha=0.2)
+    )
+
+    ax.set_title(
+        f"{selected_symbol} — Scenario: {scenario_ma_type} ({fast_ma}/{slow_ma})"
+    )
     ax.legend()
     ax.grid(alpha=0.3)
 
+    # ✅ Render LAST
     st.pyplot(fig)
 
 else:
-    st.info("⬆ Select a stock from the table to view its chart")
+    st.info("⬆ Select a stock from the table to run a scenario analysis")
 
 # ---------- FOOTER ----------
 st.markdown("---")
-st.caption("")
+st.caption("© 2025 Adaptive Finance | Strategy Discovery + Scenario Analysis Dashboard")
+ 

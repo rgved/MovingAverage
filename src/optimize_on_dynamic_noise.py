@@ -1,23 +1,23 @@
-#This Piece of code takes the backtesj strategy from backtest.py and optimizes it with introducing parameters like Dynamic Volitiliy Threshold, Trend strength and Noise
-
 import pandas as pd
 import numpy as np
 from backtest import backtest_strategy
 import os
 
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-REPORTS_DIR = os.path.join(BASE_DIR, "reports")
+# ---------- PATH SETUP ----------
+SRC_DIR = os.path.dirname(os.path.abspath(__file__))
+PROJECT_ROOT = os.path.dirname(SRC_DIR)
+
+DATA_DIR = os.path.join(PROJECT_ROOT, "data", "processed")
+REPORTS_DIR = os.path.join(PROJECT_ROOT, "reports")
 
 os.makedirs(REPORTS_DIR, exist_ok=True)
 
 # ---------- Compute Volatility ----------
 def compute_volatility(df, window=20):
-    """Rolling volatility (standard deviation of daily returns)."""
     return df["Close"].pct_change().rolling(window).std().iloc[-1]
 
 # ---------- Compute Trend Strength ----------
 def compute_trend_strength(df, window=20):
-    """% directional move over last N days."""
     if len(df) < window:
         return 0
     start = df["Close"].iloc[-window]
@@ -26,90 +26,71 @@ def compute_trend_strength(df, window=20):
 
 # ---------- Compute Noise Ratio ----------
 def compute_noise_ratio(df, window=20):
-    """
-    0 → perfectly trending, 1 → completely random.
-    Measures 'choppiness' using ratio of net move vs total move.
-    """
     returns = df["Close"].pct_change().dropna()
     if len(returns) < window:
         return 0
     window_returns = returns[-window:]
     cumulative = abs((df["Close"].iloc[-1] / df["Close"].iloc[-window]) - 1)
     total_abs = window_returns.abs().sum()
-    if total_abs == 0:
-        return 0
-    return 1 - (cumulative / total_abs)
+    return 0 if total_abs == 0 else 1 - (cumulative / total_abs)
 
 # ---------- Add Moving Averages ----------
 def add_moving_averages(df, ma_type="EMA", fast=10, slow=20):
     df = df.copy()
+
     if ma_type.upper() == "EMA":
         df["MA_Fast"] = df["Close"].ewm(span=fast, adjust=False).mean()
         df["MA_Slow"] = df["Close"].ewm(span=slow, adjust=False).mean()
     elif ma_type.upper() == "SMA":
-        df["MA_Fast"] = df["Close"].rolling(window=fast).mean()
-        df["MA_Slow"] = df["Close"].rolling(window=slow).mean()
+        df["MA_Fast"] = df["Close"].rolling(fast).mean()
+        df["MA_Slow"] = df["Close"].rolling(slow).mean()
     else:
         raise ValueError("ma_type must be SMA or EMA")
 
-    # Signals
-    df["Signal"] = 0
-    df.loc[df["MA_Fast"] > df["MA_Slow"], "Signal"] = 1
-    df.loc[df["MA_Fast"] < df["MA_Slow"], "Signal"] = -1
+    df["Signal"] = np.where(df["MA_Fast"] > df["MA_Slow"], 1, -1)
     df["Crossover"] = df["Signal"].diff()
     return df
 
 # ---------- Smart MA Selector ----------
-# ---------- Smart MA Selector (Tiered Noise Logic) ----------
-def select_ma_type(vol, trend, noise,
-                   vol_threshold=0.009, trend_threshold=0.045):
-    """
-    3D Adaptive Market Regime Decision (Improved Tiered Logic):
-
-    EMA → high volatility, strong trend, and manageable noise
-    SMA → high noise or weak trend/vol regime
-
-    Tiers:
-    - noise < 55% → clean trend → EMA
-    - 55% <= noise < 75% → moderate choppiness → EMA only if trend is strong
-    - noise >= 75% → choppy market → SMA
-    """
-    # Low noise → clear smooth trend → EMA
+def select_ma_type(vol, trend, noise, trend_threshold=0.045):
     if noise < 0.55:
         return "EMA"
-    
-    # Moderate noise → allow EMA only when trend is strong
     elif noise < 0.75 and trend > trend_threshold:
         return "EMA"
-    
-    # High noise or weak trend → SMA for safety
     else:
         return "SMA"
-
 
 # ---------- Dynamic Optimizer ----------
 def optimize_dynamic_trend_noise(symbol, ma_pairs=None):
     if ma_pairs is None:
         ma_pairs = [(10, 20), (12, 26), (20, 50), (50, 100), (50, 200)]
 
-    print(f"\n🔍 Running dynamic + trend + noise optimization for {symbol}...")
+    print(f"\n🔍 Running optimization for {symbol}")
 
-    df = pd.read_csv(f"data/processed/{symbol}.csv")
+    file_path = os.path.join(DATA_DIR, f"{symbol}.csv")
+    if not os.path.exists(file_path):
+        raise FileNotFoundError(f"Missing data: {file_path}")
+
+    df = pd.read_csv(file_path)
     df["Date"] = pd.to_datetime(df["Date"])
+
     df_recent = df[df["Date"] >= (df["Date"].max() - pd.DateOffset(months=3))]
 
-    # Compute regime stats
+    if len(df_recent) < 50:
+        raise ValueError("Not enough recent data")
+
     vol = compute_volatility(df_recent)
     trend = compute_trend_strength(df_recent)
     noise = compute_noise_ratio(df_recent)
     ma_type = select_ma_type(vol, trend, noise)
 
-    print(f"📈 Vol={vol:.2%}, Trend={trend:.2%}, Noise={noise:.2%} → Using {ma_type}")
+    print(f"📈 Vol={vol:.2%}, Trend={trend:.2%}, Noise={noise:.2%} → {ma_type}")
 
     results = []
 
     for fast, slow in ma_pairs:
-        df_pair = add_moving_averages(df_recent, ma_type=ma_type, fast=fast, slow=slow)
+        df_pair = add_moving_averages(df_recent, ma_type, fast, slow)
+
         metrics, _ = backtest_strategy(
             df_pair,
             exit_mode="time",
@@ -133,34 +114,35 @@ def optimize_dynamic_trend_noise(symbol, ma_pairs=None):
             "Trades": metrics["Trades"]
         })
 
-    results_df = pd.DataFrame(results).sort_values("Return", ascending=False).reset_index(drop=True)
+    results_df = pd.DataFrame(results).sort_values("Return", ascending=False)
+
     out_path = os.path.join(
-    REPORTS_DIR,
-    f"{symbol.replace('.', '_')}_dynamic_trend_noise_optimization.csv"
-)
+        REPORTS_DIR,
+        f"{symbol.replace('.', '_')}_dynamic_trend_noise_optimization.csv"
+    )
     results_df.to_csv(out_path, index=False)
 
-    print(results_df.head(3))
     print(f"✅ Saved → {out_path}")
     return results_df
 
 # ---------- Batch Runner ----------
 def run_all_dynamic_trend_noise(symbols):
-    all_results = []
+    best = []
+
     for sym in symbols:
         try:
-            df_res = optimize_dynamic_trend_noise(sym)
-            all_results.append(df_res.head(1))
+            res = optimize_dynamic_trend_noise(sym)
+            best.append(res.head(1))
         except Exception as e:
-            print(f"⚠️ Error for {sym}: {e}")
-    if all_results:
-        final = pd.concat(all_results, ignore_index=True)
-        final.to_csv(
-        os.path.join(REPORTS_DIR, "best_dynamic_trend_noise_summary.csv"),
-    index=False
-)
+            print(f"⚠️ {sym}: {e}")
 
-        print("\n🏆 Saved final summary → reports/best_dynamic_trend_noise_summary.csv")
+    if best:
+        final = pd.concat(best, ignore_index=True)
+        final.to_csv(
+            os.path.join(REPORTS_DIR, "best_dynamic_trend_noise_summary.csv"),
+            index=False
+        )
+        print("\n🏆 Final summary saved")
 
 if __name__ == "__main__":
     symbols = [

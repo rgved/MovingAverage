@@ -3,17 +3,14 @@ import pandas as pd
 import os
 from datetime import datetime
 
-# ---------- BASE DIR (PROJECT ROOT) ----------
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-# __file__ → src/trim_data.py
-# dirname → src
-# dirname again → project root ✅
+# ---------- PATH SETUP ----------
+SRC_DIR = os.path.dirname(os.path.abspath(__file__))   # .../src
+PROJECT_ROOT = os.path.dirname(SRC_DIR)                # project root
 
-# ---------- PATHS ----------
-input_dir = os.path.join(BASE_DIR, "data", "processed")
-output_dir = os.path.join(BASE_DIR, "data", "trimmed")
+INPUT_DIR = os.path.join(PROJECT_ROOT, "data", "processed")
+OUTPUT_DIR = os.path.join(PROJECT_ROOT, "data", "trimmed")
 
-os.makedirs(output_dir, exist_ok=True)
+os.makedirs(OUTPUT_DIR, exist_ok=True)
 
 # ---------- Rolling 3-Month Window ----------
 END_DATE = pd.Timestamp(datetime.today().date())
@@ -28,12 +25,12 @@ print(
 summary = []
 
 # ---------- Trim Loop ----------
-for file in os.listdir(input_dir):
+for file in os.listdir(INPUT_DIR):
     if file.endswith(".csv"):
-        file_path = os.path.join(input_dir, file)
+        file_path = os.path.join(INPUT_DIR, file)
         df = pd.read_csv(file_path)
 
-        # Parse date safely and remove timezone
+        # Parse date safely and remove timezone if present
         df["Date"] = pd.to_datetime(
             df["Date"], utc=True, errors="coerce"
         ).dt.tz_convert(None)
@@ -42,11 +39,11 @@ for file in os.listdir(input_dir):
 
         # Filter rolling window
         df_trimmed = df[
-            (df["Date"] >= START_DATE) & (df["Date"] <= END_DATE)
+            (df["Date"] >= START_DATE) &
+            (df["Date"] <= END_DATE)
         ]
 
-        # Save trimmed data to ROOT/data/trimmed ✅
-        out_path = os.path.join(output_dir, file)
+        out_path = os.path.join(OUTPUT_DIR, file)
         df_trimmed.to_csv(out_path, index=False)
 
         row_count = len(df_trimmed)
@@ -63,4 +60,4 @@ for f, count in summary:
     else:
         print(f"✅ {f:<25} — OK ({count} rows)")
 
-print(f"\n🎯 Rolling 3-month datasets saved to:\n{output_dir}")
+print(f"\n🎯 Rolling 3-month datasets saved to:\n{OUTPUT_DIR}")
