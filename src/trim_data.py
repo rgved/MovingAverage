@@ -13,13 +13,14 @@ OUTPUT_DIR = os.path.join(PROJECT_ROOT, "data", "trimmed")
 os.makedirs(OUTPUT_DIR, exist_ok=True)
 
 # ---------- Rolling 3-Month Window ----------
-END_DATE = pd.Timestamp(datetime.today().date())
+# Set END_DATE to the *end* of today to ensure today's data (with time) is included
+END_DATE = pd.Timestamp(datetime.today().date()) + pd.Timedelta(days=1) - pd.Timedelta(seconds=1)
 LOOKBACK_DAYS = 92   # ~3 months
 START_DATE = END_DATE - pd.Timedelta(days=LOOKBACK_DAYS)
 
 print(
-    f"📅 Trimming all datasets to rolling window:\n"
-    f"    {START_DATE.date()} → {END_DATE.date()} (Last ~3 months)\n"
+    f"Trimming all datasets to rolling window:\n"
+    f"    {START_DATE.date()} -> {END_DATE.date()} (Last ~3 months)\n"
 )
 
 summary = []
@@ -30,10 +31,8 @@ for file in os.listdir(INPUT_DIR):
         file_path = os.path.join(INPUT_DIR, file)
         df = pd.read_csv(file_path)
 
-        # Parse date safely and remove timezone if present
-        df["Date"] = pd.to_datetime(
-            df["Date"], utc=True, errors="coerce"
-        ).dt.tz_convert(None)
+        # Parse date safely (expecting naive dates from features.py, but handling potential TZ just in case)
+        df["Date"] = pd.to_datetime(df["Date"], utc=True).dt.tz_convert("Asia/Kolkata").dt.tz_localize(None)
 
         df = df.sort_values("Date")
 
@@ -47,17 +46,17 @@ for file in os.listdir(INPUT_DIR):
         df_trimmed.to_csv(out_path, index=False)
 
         row_count = len(df_trimmed)
-        status = "✅" if row_count > 0 else "⚠️ EMPTY"
+        status = "OK" if row_count > 0 else "! EMPTY"
         print(f"{status} {file:<25} | {row_count:>4} rows retained")
 
         summary.append((file, row_count))
 
 # ---------- Summary ----------
-print("\n📊 Summary Report")
+print("\n Summary Report")
 for f, count in summary:
     if count < 30:
-        print(f"⚠️ {f:<25} — Only {count} rows")
+        print(f"! {f:<25} -- Only {count} rows")
     else:
-        print(f"✅ {f:<25} — OK ({count} rows)")
+        print(f"OK {f:<25} -- OK ({count} rows)")
 
-print(f"\n🎯 Rolling 3-month datasets saved to:\n{OUTPUT_DIR}")
+print(f"\n Rolling 3-month datasets saved to:\n{OUTPUT_DIR}")

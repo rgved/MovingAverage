@@ -65,7 +65,7 @@ def optimize_dynamic_trend_noise(symbol, ma_pairs=None):
     if ma_pairs is None:
         ma_pairs = [(10, 20), (12, 26), (20, 50), (50, 100), (50, 200)]
 
-    print(f"\n🔍 Running optimization for {symbol}")
+    print(f"\n Running optimization for {symbol}")
 
     file_path = os.path.join(DATA_DIR, f"{symbol}.csv")
     if not os.path.exists(file_path):
@@ -84,7 +84,7 @@ def optimize_dynamic_trend_noise(symbol, ma_pairs=None):
     noise = compute_noise_ratio(df_recent)
     ma_type = select_ma_type(vol, trend, noise)
 
-    print(f"📈 Vol={vol:.2%}, Trend={trend:.2%}, Noise={noise:.2%} → {ma_type}")
+    print(f" Vol={vol:.2%}, Trend={trend:.2%}, Noise={noise:.2%} -> {ma_type}")
 
     results = []
 
@@ -122,7 +122,7 @@ def optimize_dynamic_trend_noise(symbol, ma_pairs=None):
     )
     results_df.to_csv(out_path, index=False)
 
-    print(f"✅ Saved → {out_path}")
+    print(f"OK Saved -> {out_path}")
     return results_df
 
 # ---------- Batch Runner ----------
@@ -134,7 +134,7 @@ def run_all_dynamic_trend_noise(symbols):
             res = optimize_dynamic_trend_noise(sym)
             best.append(res.head(1))
         except Exception as e:
-            print(f"⚠️ {sym}: {e}")
+            print(f"! {sym}: {e}")
 
     if best:
         final = pd.concat(best, ignore_index=True)
@@ -142,7 +142,7 @@ def run_all_dynamic_trend_noise(symbols):
             os.path.join(REPORTS_DIR, "best_dynamic_trend_noise_summary.csv"),
             index=False
         )
-        print("\n🏆 Final summary saved")
+        print("\n Final summary saved")
 
 if __name__ == "__main__":
     symbols = [

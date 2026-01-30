@@ -30,10 +30,10 @@ with open(os.path.join(BASE_DIR, "upstox_symbol_map.json")) as f:
 def fetch_history(symbol, instrument_key, days=365):
     os.makedirs(DATA_DIR, exist_ok=True)
 
-    to_date = datetime.today().date()
+    to_date = (datetime.today() + timedelta(days=1)).date()
     from_date = to_date - timedelta(days=days)
 
-    print(f"Fetching {symbol}: {from_date} → {to_date}")
+    print(f"Fetching {symbol}: {from_date} -> {to_date}")
 
     url = (
         "https://api.upstox.com/v2/historical-candle/"
@@ -43,13 +43,13 @@ def fetch_history(symbol, instrument_key, days=365):
     response = requests.get(url, headers=HEADERS)
 
     if response.status_code != 200:
-        print(f"❌ {symbol} | {response.status_code} | {response.text}")
+        print(f"X {symbol} | {response.status_code} | {response.text}")
         return
 
     candles = response.json().get("data", {}).get("candles", [])
 
     if not candles:
-        print(f"⚠️ No data for {symbol}")
+        print(f"! No data for {symbol}")
         return
 
     df = pd.DataFrame(
@@ -62,7 +62,7 @@ def fetch_history(symbol, instrument_key, days=365):
     df = df.sort_values("Date")
 
     df.to_csv(os.path.join(DATA_DIR, f"{symbol}.csv"), index=False)
-    print(f"✅ Saved {symbol} ({len(df)} rows)")
+    print(f"OK Saved {symbol} ({len(df)} rows)")
 
 
 if __name__ == "__main__":

@@ -54,7 +54,8 @@ def generate_signals(df):
 # ---------- Master Function ----------
 def process_file(filepath, ma_type="SMA", fast=10, slow=20):
     df = pd.read_csv(filepath)
-    df["Date"] = pd.to_datetime(df["Date"])
+    # Ensure Date is parsed as UTC first if it has offset, then convert to IST
+    df["Date"] = pd.to_datetime(df["Date"], utc=True).dt.tz_convert("Asia/Kolkata").dt.tz_localize(None)
     df = df.sort_values("Date")
 
     df = add_moving_averages(df, ma_type, fast, slow)
@@ -74,7 +75,7 @@ def process_all(data_dir=RAW_DATA_DIR,
             df = process_file(path, ma_type, fast, slow)
             out_path = os.path.join(out_dir, file)
             df.to_csv(out_path, index=False)
-            print(f"✅ Processed {file} → {out_path}")
+            print(f"OK Processed {file} -> {out_path}")
 
 # ---------- RUN ----------
 if __name__ == "__main__":
@@ -83,4 +84,4 @@ if __name__ == "__main__":
     slow = 20
 
     process_all(ma_type=ma_type, fast=fast, slow=slow)
-    print("🎉 Feature extraction complete! Files saved in data/processed/")
+    print("Feature extraction complete! Files saved in data/processed/")

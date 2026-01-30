@@ -4,6 +4,13 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
 import os
+from dotenv import load_dotenv, set_key
+
+from st_aggrid import AgGrid, GridOptionsBuilder, GridUpdateMode
+
+# ---------- PATH SETUP ----------
+import subprocess
+import sys
 
 from st_aggrid import AgGrid, GridOptionsBuilder, GridUpdateMode
 
@@ -11,6 +18,7 @@ from st_aggrid import AgGrid, GridOptionsBuilder, GridUpdateMode
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 reports_dir = os.path.join(BASE_DIR, "reports")
 data_dir = os.path.join(BASE_DIR, "data", "trimmed")
+src_dir = os.path.join(BASE_DIR, "src")
 
 # ---------- PAGE CONFIG ----------
 st.set_page_config(page_title="Adaptive MA Strategy Dashboard", layout="wide")
@@ -19,6 +27,69 @@ st.title("Adaptive Moving Average Strategy Dashboard")
 if not os.path.exists(reports_dir):
     st.error(f"Reports directory not found: {reports_dir}")
     st.stop()
+
+# ---------- SIDEBAR CONFIGURATION ----------
+st.sidebar.title("Configuration")
+env_path = os.path.join(BASE_DIR, ".env")
+load_dotenv(env_path)
+
+current_token = os.getenv("UPSTOX_ACCESS_TOKEN", "")
+
+# Hide existing token, only allow updates
+new_token = st.sidebar.text_input(
+    "Upstox Access Token", 
+    value="", 
+    type="password", 
+    placeholder="Enter new token to update",
+    help="Enter a new token only if you want to update the existing one."
+)
+
+if new_token:
+    set_key(env_path, "UPSTOX_ACCESS_TOKEN", new_token)
+    # Reload environment variable to ensure consistency
+    os.environ["UPSTOX_ACCESS_TOKEN"] = new_token
+    st.sidebar.success("Token updated!")
+
+st.sidebar.markdown("---")
+st.sidebar.header("Data Management")
+
+def run_script(script_name, status_text):
+    script_path = os.path.join(src_dir, script_name)
+    status_text.text(f"Running {script_name}...")
+    try:
+        result = subprocess.run([sys.executable, script_path], check=True, capture_output=True, text=True)
+        # print(result.stdout) # Optional: Log output
+    except subprocess.CalledProcessError as e:
+        st.error(f"Error running {script_name}:\n{e.stderr}")
+        raise e
+
+if st.sidebar.button("Update Data & Run Optimization"):
+    # Check if token exists
+    if not current_token:
+        st.sidebar.error("⚠️ Access Token Missing! Please update the token above first.")
+    else:
+        status_placeholder = st.sidebar.empty()
+        try:
+            with st.spinner("Running data pipeline... This may take a while."):
+                # 1. Fetch Data
+                run_script("fetch-data-upstox.py", status_placeholder)
+                
+                # 2. Features
+                run_script("features.py", status_placeholder)
+                
+                # 3. Trim Data
+                run_script("trim_data.py", status_placeholder)
+                
+                # 4. Optimize
+                run_script("optimize_on_dynamic_noise.py", status_placeholder)
+                
+            status_placeholder.success("Pipeline completed successfully! ✅")
+            st.rerun() # Refresh app to show new data
+            
+        except Exception as e:
+            st.sidebar.error("Pipeline failed!")
+
+
 
 # ---------- BUILD SUMMARY TABLE (BEST STRATEGY PER STOCK) ----------
 rows = []
@@ -54,10 +125,10 @@ with col1:
     scenario_ma_type = st.selectbox("MA Type", ["EMA", "SMA"])
 
 with col2:
-    fast_ma = st.selectbox("Fast MA (MA1)", list(range(5, 51, 5)))
+    fast_ma = st.selectbox("Fast MA (MA1)", [5, 10, 12, 20, 50, 100])
 
 with col3:
-    slow_ma = st.selectbox("Slow MA (MA2)", list(range(10, 101, 10)))
+    slow_ma = st.selectbox("Slow MA (MA2)", [20, 50, 100, 200])
 
 # ---------- VALIDATION ----------
 if fast_ma >= slow_ma:
@@ -136,21 +207,31 @@ if has_selection:
     ax.scatter(sells["Date"], sells["Close"], marker="v", color="red", s=80, label="Sell")
 
     # ✅ FORCE X-AXIS TO SHOW LATEST DATE
-    ax.set_xlim(df["Date"].min(), df["Date"].max())
     import matplotlib.dates as mdates
-
-    # Force latest date to appear as an x-axis tick
     latest_date = df["Date"].max()
+    
+    # Add padding to right side so last label fits (reduced from 5 to 1 day)
+    padding = pd.Timedelta(days=1) 
+    ax.set_xlim(df["Date"].min(), latest_date + padding)
 
-    ticks = ax.get_xticks()
-    tick_dates = [mdates.num2date(t).replace(tzinfo=None) for t in ticks]
+    # Get default ticks
+    ax.xaxis.set_major_locator(mdates.AutoDateLocator())
+    ticks = list(ax.get_xticks())
+    
+    # Convert latest_date to matplotlib date number
+    latest_num = mdates.date2num(latest_date)
+    
+    # Filter out ticks too close to the latest date (within 2 days) to prevent overlap
+    # AND filter out any ticks that are AFTER the latest date (future dates)
+    ticks = [t for t in ticks if t <= latest_num and abs(t - latest_num) > 2.0]
+    
+    # Add latest date tick
+    ticks.append(latest_num)
+    ticks.sort()
 
-    if latest_date not in tick_dates:
-        tick_dates.append(latest_date)
-
-    ax.set_xticks(tick_dates)
+    ax.set_xticks(ticks)
     ax.xaxis.set_major_formatter(mdates.DateFormatter("%Y-%m-%d"))
-    fig.autofmt_xdate(rotation=30)
+    fig.autofmt_xdate(rotation=30, ha='right')
 
 
     # ✅ Highlight latest price (MUST be before st.pyplot)
