@@ -1,3 +1,4 @@
+
 # dashboard/app.py
 import streamlit as st
 import pandas as pd
@@ -5,14 +6,18 @@ import matplotlib.pyplot as plt
 import numpy as np
 import os
 from dotenv import load_dotenv, set_key
-
-from st_aggrid import AgGrid, GridOptionsBuilder, GridUpdateMode
-
-# ---------- PATH SETUP ----------
 import subprocess
 import sys
 
 from st_aggrid import AgGrid, GridOptionsBuilder, GridUpdateMode
+# Import constants
+try:
+    from constants import NIFTY_50_SYMBOLS, FNO_STOCKS
+except ImportError:
+    # Fallback if running from root
+    sys.path.append(os.path.join(os.path.dirname(__file__)))
+    from constants import NIFTY_50_SYMBOLS, FNO_STOCKS
+
 
 # ---------- PATH SETUP ----------
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -66,7 +71,7 @@ def run_script(script_name, status_text):
 if st.sidebar.button("Update Data & Run Optimization"):
     # Check if token exists
     if not current_token:
-        st.sidebar.error("⚠️ Access Token Missing! Please update the token above first.")
+        st.sidebar.error("⚠ Access Token Missing! Please update the token above first.")
     else:
         status_placeholder = st.sidebar.empty()
         try:
@@ -89,32 +94,170 @@ if st.sidebar.button("Update Data & Run Optimization"):
         except Exception as e:
             st.sidebar.error("Pipeline failed!")
 
+st.sidebar.markdown("---")
+st.sidebar.header("Filters & Sorting")
+
+# Timeframe Selection
+timeframe = st.sidebar.selectbox("Timeframe", ["Daily", "Weekly"], index=0)
+
+# Universe Selection
+universe = st.sidebar.radio("Universe", ["NSE 500", "Nifty 50"], index=0)
+
+# Sorting Selection
+sort_by = st.sidebar.selectbox(
+    "Sort By", 
+    ["Return (%)", "Win Rate (%)", "Recent Bullish Crossover", "Recent Bearish Crossover"],
+    index=0
+)
+
+# Min Trades Filter
+min_trades = st.sidebar.slider("Minimum Trades", 0, 50, 5)
+
+# ---------- CACHED CROSSOVER CALCULATION ----------
+@st.cache_data
+def calculate_crossovers(stock_list, tf):
+    crossover_data = {}
+    
+    for symbol in stock_list:
+        price_file = os.path.join(data_dir, f"{symbol}.csv")
+        if not os.path.exists(price_file):
+            continue
+            
+        try:
+            df = pd.read_csv(price_file)
+            df["Date"] = pd.to_datetime(df["Date"], utc=True, errors="coerce").dt.tz_convert(None)
+            df = df.sort_values("Date")
+            
+            # Resample if Weekly
+            if tf == "Weekly":
+                df.set_index("Date", inplace=True)
+                df = df.resample("W").agg({"Open": "first", "High": "max", "Low": "min", "Close": "last", "Volume": "sum"})
+                df.dropna(inplace=True)
+                df.reset_index(inplace=True)
+
+            # Optimization results (to get MA params)
+            report_file = os.path.join(reports_dir, f"{symbol.replace('.', '_')}_dynamic_trend_noise_optimization.csv")
+            if not os.path.exists(report_file):
+                continue
+                
+            rep = pd.read_csv(report_file)
+            best = rep.iloc[0]
+            ma_type = best["MA_Type"]
+            fast, slow = map(int, best["MA_Pair"].split("/"))
+
+            # Calculate MAs
+            if ma_type == "EMA":
+                df["MA_Fast"] = df["Close"].ewm(span=fast, adjust=False).mean()
+                df["MA_Slow"] = df["Close"].ewm(span=slow, adjust=False).mean()
+            else:
+                df["MA_Fast"] = df["Close"].rolling(fast).mean()
+                df["MA_Slow"] = df["Close"].rolling(slow).mean()
+
+            df["Signal"] = np.where(df["MA_Fast"] > df["MA_Slow"], 1, -1)
+            df["Crossover"] = df["Signal"].diff() # 2=Bullish, -2=Bearish
+
+            # Find last crossover
+            last_bullish_idx = df[df["Crossover"] == 2].index.max()
+            last_bearish_idx = df[df["Crossover"] == -2].index.max()
+            
+            last_bullish_date = df.loc[last_bullish_idx, "Date"] if pd.notna(last_bullish_idx) else pd.Timestamp.min
+            last_bearish_date = df.loc[last_bearish_idx, "Date"] if pd.notna(last_bearish_idx) else pd.Timestamp.min
+            
+            crossover_data[symbol] = {
+                "Recent Bullish Crossover": last_bullish_date,
+                "Recent Bearish Crossover": last_bearish_date
+            }
+            
+        except Exception:
+            continue
+            
+    return crossover_data
 
 
 # ---------- BUILD SUMMARY TABLE (BEST STRATEGY PER STOCK) ----------
 rows = []
+symbols_to_process = []
 
+# First pass: Collect data and filter by universe/trades
 for file in os.listdir(reports_dir):
     if file.endswith("_dynamic_trend_noise_optimization.csv"):
         symbol = file.replace("_dynamic_trend_noise_optimization.csv", "").replace("_", ".")
+        
+        # Filter by Universe
+        if universe == "Nifty 50":
+            # Using simple check if symbol starts with Nifty 50 name (basic matching)
+            # A more robust way is to check exact symbol match
+            base_symbol = symbol.split(".")[0]
+            if base_symbol not in NIFTY_50_SYMBOLS:
+                continue
+
         rep = pd.read_csv(os.path.join(reports_dir, file))
         best = rep.iloc[0]
+        
+        trades = int(best["Trades"])
+        
+        # Filter by Min Trades
+        if trades < min_trades:
+            continue
+
+        symbols_to_process.append(symbol)
+        
+        # Win Rate formatting
+        win_rate = best["WinRate"]
+        if win_rate > 1:
+            win_rate /= 100
+        wins = int(round(win_rate * trades))
+        win_rate_str = f"{round(win_rate * 100, 1)}% ({wins}/{trades})"
+
+        # F&O Indicator
+        base_symbol_clean = symbol.split(".")[0]
+        display_symbol = f"{symbol} *" if base_symbol_clean in FNO_STOCKS else symbol
 
         rows.append({
-            "Symbol": symbol,
+            "Symbol": display_symbol,
+            "RawSymbol": symbol,
             "Best MA Type": best["MA_Type"],
             "Best MA Pair": best["MA_Pair"],
             "Return (%)": round(best["Return"], 2),
-            "Win Rate (%)": round(best["WinRate"], 1),
+            "Win Rate (%)": win_rate_str,
+            "RawWinRate": win_rate, # For sorting
             "Sharpe": round(best["Sharpe"], 2),
-            "Trades": int(best["Trades"])
+            "Trades": trades
         })
 
-summary_df = (
-    pd.DataFrame(rows)
-    .sort_values(by="Return (%)", ascending=False)
-    .reset_index(drop=True)
-)
+# Compute crossovers if needed for sorting
+crossover_map = {}
+if "Crossover" in sort_by:
+    with st.spinner("Calculating crossovers..."):
+        crossover_map = calculate_crossovers(symbols_to_process, timeframe)
+
+# Add crossover data to rows
+for row in rows:
+    sym = row["RawSymbol"]
+    if sym in crossover_map:
+        row["Recent Bullish Crossover"] = crossover_map[sym]["Recent Bullish Crossover"]
+        row["Recent Bearish Crossover"] = crossover_map[sym]["Recent Bearish Crossover"]
+    else:
+        # Default for sorting if calculation failed or didn't run
+        row["Recent Bullish Crossover"] = pd.Timestamp.min
+        row["Recent Bearish Crossover"] = pd.Timestamp.min
+
+summary_df = pd.DataFrame(rows)
+
+if not summary_df.empty:
+    if sort_by == "Return (%)":
+        summary_df = summary_df.sort_values(by="Return (%)", ascending=False)
+    elif sort_by == "Win Rate (%)":
+        summary_df = summary_df.sort_values(by="RawWinRate", ascending=False)
+    elif sort_by == "Recent Bullish Crossover":
+        summary_df = summary_df.sort_values(by="Recent Bullish Crossover", ascending=False)
+    elif sort_by == "Recent Bearish Crossover":
+        summary_df = summary_df.sort_values(by="Recent Bearish Crossover", ascending=False)
+    
+    # Drop raw cols used for sorting
+    summary_df = summary_df.drop(columns=["RawSymbol", "RawWinRate", "Recent Bullish Crossover", "Recent Bearish Crossover"])
+    summary_df = summary_df.reset_index(drop=True)
+
 
 # ---------- SCENARIO CONTROLS (WHAT-IF MODE) ----------
 st.markdown("### 🔎 Scenario Analysis (What-If MA Strategy)")
@@ -137,7 +280,7 @@ if fast_ma >= slow_ma:
 
 st.caption(
     f"📌 Showing *what-if scenario* for **{scenario_ma_type} {fast_ma}/{slow_ma}** "
-    "(independent of historical optimization)"
+    f"on **{timeframe}** data (independent of historical optimization)"
 )
 
 # ---------- TABLE ----------
@@ -165,10 +308,12 @@ has_selection = (
 )
 
 if has_selection:
-    selected_symbol = selected_rows.iloc[0]["Symbol"]
+    display_symbol = selected_rows.iloc[0]["Symbol"]
+    # Remove asterisk if present
+    selected_symbol = display_symbol.replace(" *", "")
 
     st.markdown("---")
-    st.subheader("📈 Price Chart + Scenario MA Overlay")
+    st.subheader(f"📈 Price Chart ({timeframe}) + Scenario MA Overlay")
 
     price_file = os.path.join(data_dir, f"{selected_symbol}.csv")
 
@@ -180,6 +325,14 @@ if has_selection:
     df = pd.read_csv(price_file)
     df["Date"] = pd.to_datetime(df["Date"], utc=True, errors="coerce").dt.tz_convert(None)
     df = df.sort_values("Date")
+    
+    # ---------- TIME FRAME RESAMPLING ----------
+    if timeframe == "Weekly":
+        df.set_index("Date", inplace=True)
+        # Resample logic
+        df = df.resample("W").agg({"Open": "first", "High": "max", "Low": "min", "Close": "last", "Volume": "sum"})
+        df.dropna(inplace=True)
+        df.reset_index(inplace=True)
 
     # ---------- APPLY SCENARIO MOVING AVERAGES ----------
     if scenario_ma_type == "EMA":
@@ -211,7 +364,9 @@ if has_selection:
     latest_date = df["Date"].max()
     
     # Add padding to right side so last label fits (reduced from 5 to 1 day)
-    padding = pd.Timedelta(days=1) 
+    # Adjust padding for Weekly vs Daily
+    padding_days = 7 if timeframe == "Weekly" else 1
+    padding = pd.Timedelta(days=padding_days) 
     ax.set_xlim(df["Date"].min(), latest_date + padding)
 
     # Get default ticks
@@ -221,9 +376,9 @@ if has_selection:
     # Convert latest_date to matplotlib date number
     latest_num = mdates.date2num(latest_date)
     
-    # Filter out ticks too close to the latest date (within 2 days) to prevent overlap
-    # AND filter out any ticks that are AFTER the latest date (future dates)
-    ticks = [t for t in ticks if t <= latest_num and abs(t - latest_num) > 2.0]
+    # Filter out ticks too close to the latest date
+    threshold = 10.0 if timeframe == "Weekly" else 2.0
+    ticks = [t for t in ticks if t <= latest_num and abs(t - latest_num) > threshold]
     
     # Add latest date tick
     ticks.append(latest_num)
@@ -269,7 +424,7 @@ if has_selection:
     )
 
     ax.set_title(
-        f"{selected_symbol} — Scenario: {scenario_ma_type} ({fast_ma}/{slow_ma})"
+        f"{selected_symbol} — Scenario: {scenario_ma_type} ({fast_ma}/{slow_ma}) — {timeframe}"
     )
     ax.legend()
     ax.grid(alpha=0.3)
@@ -283,4 +438,3 @@ else:
 # ---------- FOOTER ----------
 st.markdown("---")
 st.caption("© 2025 Adaptive Finance | Strategy Discovery + Scenario Analysis Dashboard")
- 

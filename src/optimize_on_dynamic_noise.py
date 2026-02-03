@@ -74,10 +74,13 @@ def optimize_dynamic_trend_noise(symbol, ma_pairs=None):
     df = pd.read_csv(file_path)
     df["Date"] = pd.to_datetime(df["Date"])
 
-    df_recent = df[df["Date"] >= (df["Date"].max() - pd.DateOffset(months=3))]
+    # Use 12 months (1 year) data for more robust optimization
+    start_date = df["Date"].max() - pd.DateOffset(months=12)
+    df_recent = df[df["Date"] >= start_date]
 
-    if len(df_recent) < 50:
-        raise ValueError("Not enough recent data")
+    if len(df_recent) < 100:
+        print(f"Skipping {symbol}: Not enough data (<100 rows in last year)")
+        return pd.DataFrame()
 
     vol = compute_volatility(df_recent)
     trend = compute_trend_strength(df_recent)
@@ -89,11 +92,15 @@ def optimize_dynamic_trend_noise(symbol, ma_pairs=None):
     results = []
 
     for fast, slow in ma_pairs:
+        # Skip invalid pairs where fast >= slow
+        if fast >= slow:
+            continue
+            
         df_pair = add_moving_averages(df_recent, ma_type, fast, slow)
 
         metrics, _ = backtest_strategy(
             df_pair,
-            exit_mode="time",
+            exit_mode="opposite", # Enforce opposite crossover exit for purity
             hold_days=7,
             stop_loss=0.03,
             take_profit=0.05,
@@ -101,20 +108,27 @@ def optimize_dynamic_trend_noise(symbol, ma_pairs=None):
         )
 
         results.append({
-            "Symbol": symbol,
-            "Volatility": round(vol * 100, 2),
-            "TrendStrength": round(trend * 100, 2),
-            "Noise": round(noise * 100, 2),
-            "MA_Type": ma_type,
-            "MA_Pair": f"{fast}/{slow}",
-            "Return": metrics["Total Return"],
-            "WinRate": metrics["Win Rate"],
-            "Sharpe": metrics["Sharpe Ratio"],
-            "MaxDD": metrics["Max Drawdown"],
-            "Trades": metrics["Trades"]
+            "symbol": symbol,
+            "volatility": round(vol * 100, 2),
+            "trend_strength": round(trend * 100, 2),
+            "noise": round(noise * 100, 2),
+            "ma_type": ma_type,
+            "ma_pair": f"{fast}/{slow}",
+            "total_return": metrics["total_return"] * 100,
+            "win_rate": metrics["win_rate"],
+            "sharpe_ratio": metrics["sharpe"],
+            "max_drawdown": metrics["max_drawdown"] * 100,
+            "num_trades": metrics["trades"]
         })
 
-    results_df = pd.DataFrame(results).sort_values("Return", ascending=False)
+    # Sort by Return desc
+    results_df = pd.DataFrame(results).sort_values("total_return", ascending=False)
+    
+    # Filter for robustness: Prefer strategies with at least 5 trades
+    robust_df = results_df[results_df["Trades"] >= 5]
+    
+    if not robust_df.empty:
+        results_df = robust_df
 
     out_path = os.path.join(
         REPORTS_DIR,

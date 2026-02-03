@@ -27,7 +27,7 @@ os.makedirs(DATA_DIR, exist_ok=True)
 with open(os.path.join(BASE_DIR, "upstox_symbol_map.json")) as f:
     SYMBOL_MAP = json.load(f)
 
-def fetch_history(symbol, instrument_key, days=365):
+def fetch_history(symbol, instrument_key, days=1095):
     os.makedirs(DATA_DIR, exist_ok=True)
 
     to_date = (datetime.today() + timedelta(days=1)).date()

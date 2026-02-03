@@ -1,18 +1,14 @@
-#In this file we perform backtesting [applying a trading strategy to our past data]
-
 import pandas as pd
 import numpy as np
 
 # ---------- Helper Metrics ----------
 
 def max_drawdown(equity):
-    """Calculate maximum drawdown (worst loss from peak)."""
     peak = equity.cummax()
     drawdown = (equity / peak) - 1
     return drawdown.min()
 
 def sharpe_ratio(daily_returns, periods_per_year=252):
-    """Annualized Sharpe ratio based on daily returns."""
     mean = daily_returns.mean()
     std = daily_returns.std()
     if std == 0 or np.isnan(std):
@@ -20,78 +16,65 @@ def sharpe_ratio(daily_returns, periods_per_year=252):
     return (mean / std) * np.sqrt(periods_per_year)
 
 # ---------- Backtest Function ----------
+
 def backtest_strategy(
     df,
     entry_col="Crossover",
     cost_bps=15,
     exit_mode="opposite",
     hold_days=10,
-    stop_loss=None,       # e.g., 0.03 = 3%
-    take_profit=None      # e.g., 0.05 = 5%
+    stop_loss=None,
+    take_profit=None
 ):
-    """
-    Runs a long-only MA crossover backtest with optimization levers.
-    Entry: Bullish cross (next day's open)
-    Exit: Opposite cross, time-based, stop-loss, or take-profit.
-    """
-
     df = df.copy().sort_values("Date").reset_index(drop=True)
     df["Date"] = pd.to_datetime(df["Date"])
 
     in_position = False
-    entry_price = 0.0
+    entry_price = None
     entry_date = None
+
     trades = []
-    equity = [1.0]  # start with 1 unit capital
+    equity = [1.0]
+    position = 0  # 1 = long, 0 = flat
 
     for i in range(1, len(df)):
         prev = df.iloc[i - 1]
         curr = df.iloc[i]
 
-        # ENTRY condition: bullish crossover yesterday + price confirmation
-        if not in_position and prev[entry_col] == 2:
-            # Confirm price is above the slow MA → true uptrend
-            if prev["Close"] > prev["MA_Slow"]:
-                entry_price = curr["Open"]
-                entry_date = curr["Date"]
-                in_position = True
-                continue
+        # ---------- ENTRY ----------
+        if not in_position and prev[entry_col] == 2 and prev["Close"] > prev["MA_Slow"]:
+            entry_price = curr["Open"]
+            entry_date = curr["Date"]
+            in_position = True
+            position = 1
 
-        # EXIT condition: bearish crossover yesterday + price confirmation
-        if in_position:
+        # ---------- EXIT ----------
+        elif in_position:
             exit_condition = False
-            # Only exit if confirmed downtrend (Close below slow MA)
-            if exit_mode == "opposite" and prev[entry_col] == -2 and prev["Close"] < prev["MA_Slow"]:
-                exit_condition = True
-            elif exit_mode == "time" and (curr["Date"] - entry_date).days >= hold_days:
-                exit_condition = True
+            exit_reason = None
 
-
-            # Opposite crossover
             if exit_mode == "opposite" and prev[entry_col] == -2:
                 exit_condition = True
                 exit_reason = "Opposite crossover"
 
-            # Time-based exit
             elif exit_mode == "time" and (curr["Date"] - entry_date).days >= hold_days:
                 exit_condition = True
                 exit_reason = f"{hold_days}-day exit"
 
-            # Stop-loss condition
             elif stop_loss and curr["Low"] <= entry_price * (1 - stop_loss):
                 exit_condition = True
-                exit_reason = f"Stop loss ({stop_loss*100:.1f}%)"
+                exit_reason = "Stop loss"
 
-            # Take-profit condition
             elif take_profit and curr["High"] >= entry_price * (1 + take_profit):
                 exit_condition = True
-                exit_reason = f"Take profit ({take_profit*100:.1f}%)"
+                exit_reason = "Take profit"
 
             if exit_condition:
                 exit_price = curr["Open"]
                 gross_return = (exit_price / entry_price) - 1
-                cost = 2 * (cost_bps / 10000)  # entry + exit
+                cost = 2 * (cost_bps / 10000)
                 net_return = gross_return - cost
+
                 trades.append({
                     "EntryDate": entry_date,
                     "ExitDate": curr["Date"],
@@ -100,29 +83,35 @@ def backtest_strategy(
                     "NetReturn": net_return,
                     "ExitReason": exit_reason
                 })
+
                 in_position = False
+                position = 0
+                entry_price = None
+                entry_date = None
 
-        # Track equity over time (approximate)
-        equity.append(equity[-1] * (1 + df["Close"].pct_change().fillna(0).iloc[i]))
+        # ---------- Equity Curve ----------
+        daily_ret = position * df["Close"].pct_change().iloc[i]
+        equity.append(equity[-1] * (1 + (daily_ret if not np.isnan(daily_ret) else 0)))
 
-    # ---------- Metrics ----------
+    # ---------- METRICS ----------
     n_trades = len(trades)
-    if n_trades > 0:
-        win_rate = len([t for t in trades if t["NetReturn"] > 0]) / n_trades
-        total_return = np.prod([1 + t["NetReturn"] for t in trades]) - 1
-    else:
-        win_rate = 0
-        total_return = 0
+    wins = sum(1 for t in trades if t["NetReturn"] > 0)
+    losses = n_trades - wins
+
+    win_rate = wins / n_trades if n_trades > 0 else 0.0
+    total_return = np.prod([1 + t["NetReturn"] for t in trades]) - 1 if n_trades > 0 else 0.0
 
     equity_series = pd.Series(equity)
     daily_returns = equity_series.pct_change().fillna(0)
 
     metrics = {
-        "Total Return": round(total_return * 100, 2),
-        "Max Drawdown": round(max_drawdown(equity_series) * 100, 2),
-        "Sharpe Ratio": round(sharpe_ratio(daily_returns), 2),
-        "Win Rate": round(win_rate * 100, 2),
-        "Trades": n_trades
+        "total_return": total_return,   # fraction
+        "max_drawdown": max_drawdown(equity_series),
+        "sharpe": sharpe_ratio(daily_returns),
+        "win_rate": win_rate,           # fraction
+        "wins": wins,
+        "losses": losses,
+        "trades": n_trades
     }
 
     return metrics, trades
@@ -130,25 +119,25 @@ def backtest_strategy(
 
 if __name__ == "__main__":
 
-
-# Load processed file
     df = pd.read_csv("data/processed/HDFCBANK.NS.csv")
-
-    # Run backtest for 3 months
     df["Date"] = pd.to_datetime(df["Date"])
-    df_recent = df[df["Date"] >= (df["Date"].max() - pd.DateOffset(months=3))]
 
-    metrics, trades = backtest_strategy(df_recent, cost_bps=15, exit_mode="opposite")
+    # Last 3 months
+    df_recent = df[df["Date"] >= df["Date"].max() - pd.DateOffset(months=3)]
 
-    print("📊 Backtest Results for INFY.NS (3 months):")
-    for k, v in metrics.items():
-        print(f"{k:15s}: {v}")
+    metrics, trades = backtest_strategy(df_recent)
 
-    print(f"\nNumber of trades: {len(trades)}")
+    print("\n📊 Backtest Results (3 Months)\n" + "-" * 35)
+    print(f"Total Return  : {metrics['total_return']*100:.2f}%")
+    print(f"Max Drawdown  : {metrics['max_drawdown']*100:.2f}%")
+    print(f"Sharpe Ratio  : {metrics['sharpe']:.2f}")
+    print(f"Win Rate     : {metrics['wins']}/{metrics['trades']} "
+          f"= {metrics['win_rate']*100:.2f}%")
+    print(f"Trades       : {metrics['trades']}")
+
     if trades:
-        print("First trade sample:", trades[0])
-
-
+        print("\nFirst Trade Sample:")
+        print(trades[0])
 
 
 
