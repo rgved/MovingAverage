@@ -12,11 +12,25 @@ REPORTS_DIR = os.path.join(PROJECT_ROOT, "reports")
 
 os.makedirs(REPORTS_DIR, exist_ok=True)
 
+# ---------- IMPORTS ----------
+try:
+    from constants import FNO_STOCKS
+except ImportError:
+    # Fallback
+    sys.path.append(SRC_DIR)
+    from constants import FNO_STOCKS
+
 def optimize_ma_pairs(symbol, fast_range=range(5, 51, 5), slow_range=range(10, 201, 10), min_trades=5):
     """
     Optimizes MA pairs for a given symbol based on Sharpe Ratio.
     Filters out pairs with fewer than min_trades.
     """
+    # F&O Validation
+    base_symbol = symbol.split(".")[0]
+    if base_symbol not in FNO_STOCKS:
+        print(f"Skipping {symbol}: Not F&O Eligible.")
+        return None
+
     print(f"\n Optimizing MA Pairs for {symbol}...")
     
     file_path = os.path.join(DATA_DIR, f"{symbol}.csv")

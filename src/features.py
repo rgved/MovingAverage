@@ -11,6 +11,15 @@ PROJECT_ROOT = os.path.dirname(SRC_DIR)                # project root
 RAW_DATA_DIR = os.path.join(PROJECT_ROOT, "data", "raw")
 PROCESSED_DATA_DIR = os.path.join(PROJECT_ROOT, "data", "processed")
 
+# ---------- IMPORTS ----------
+try:
+    from constants import FNO_STOCKS
+except ImportError:
+    # Fallback to local path if running directly in src
+    import sys
+    sys.path.append(SRC_DIR)
+    from constants import FNO_STOCKS
+
 # ---------- Moving Averages ----------
 def compute_sma(df, column="Close", window=20):
     return df[column].rolling(window=window).mean()
@@ -45,9 +54,9 @@ def add_moving_averages(df, ma_type="SMA", fast=10, slow=20):
 # ---------- Signal Detection ----------
 def generate_signals(df):
     df = df.copy()
-    df["Signal"] = 0
-    df.loc[df["MA_Fast"] > df["MA_Slow"], "Signal"] = 1
-    df.loc[df["MA_Fast"] < df["MA_Slow"], "Signal"] = -1
+    # Use binary signal to avoid neutral state during exact equality
+    # 1 = Bullish (Fast > Slow), -1 = Bearish (Fast <= Slow)
+    df["Signal"] = np.where(df["MA_Fast"] > df["MA_Slow"], 1, -1)
     df["Crossover"] = df["Signal"].diff()
     return df
 
@@ -71,6 +80,14 @@ def process_all(data_dir=RAW_DATA_DIR,
 
     for file in os.listdir(data_dir):
         if file.endswith(".csv"):
+            symbol = file.replace(".csv", "") # Assumes filename is symbol.csv
+            base_symbol = symbol.split(".")[0] # Remove .NS or similar extensions if present for check, or assume FNO_STOCKS has clean names
+            
+            # F&O Filter
+            if base_symbol not in FNO_STOCKS:
+                print(f"Skipping {file} (Not F&O)")
+                continue
+
             path = os.path.join(data_dir, file)
             df = process_file(path, ma_type, fast, slow)
             out_path = os.path.join(out_dir, file)
