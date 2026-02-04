@@ -2,7 +2,6 @@
 # dashboard/app.py
 import streamlit as st
 import pandas as pd
-import matplotlib.pyplot as plt
 import numpy as np
 import os
 from dotenv import load_dotenv, set_key
@@ -11,12 +10,17 @@ import sys
 
 from st_aggrid import AgGrid, GridOptionsBuilder, GridUpdateMode
 # Import constants
+sys.path.append(os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "src"))
 try:
     from constants import NIFTY_50_SYMBOLS, FNO_STOCKS
 except ImportError:
-    # Fallback if running from root
+    # Fallback if running from root or implicit path issues
     sys.path.append(os.path.join(os.path.dirname(__file__)))
-    from constants import NIFTY_50_SYMBOLS, FNO_STOCKS
+    try:
+        from constants import NIFTY_50_SYMBOLS, FNO_STOCKS
+    except ImportError:
+        # Last resort fallback if src/constants.py is meant to be the source
+        pass
 
 
 # ---------- PATH SETUP ----------
@@ -101,14 +105,7 @@ st.sidebar.header("Filters & Sorting")
 timeframe = st.sidebar.selectbox("Timeframe", ["Daily", "Weekly"], index=0)
 
 # Universe Selection
-universe = st.sidebar.radio("Universe", ["NSE 500", "Nifty 50"], index=0)
-
-# Sorting Selection
-sort_by = st.sidebar.selectbox(
-    "Sort By", 
-    ["Return (%)", "Win Rate (%)", "Recent Bullish Crossover", "Recent Bearish Crossover"],
-    index=0
-)
+universe = st.sidebar.radio("Universe", ["NSE 500", "Nifty 50", "F&O"], index=0)
 
 # Min Trades Filter
 min_trades = st.sidebar.slider("Minimum Trades", 0, 50, 5)
@@ -190,6 +187,10 @@ for file in os.listdir(reports_dir):
             base_symbol = symbol.split(".")[0]
             if base_symbol not in NIFTY_50_SYMBOLS:
                 continue
+        elif universe == "F&O":
+            base_symbol = symbol.split(".")[0]
+            if base_symbol not in FNO_STOCKS:
+                continue
 
         rep = pd.read_csv(os.path.join(reports_dir, file))
         best = rep.iloc[0]
@@ -225,37 +226,28 @@ for file in os.listdir(reports_dir):
             "Trades": trades
         })
 
-# Compute crossovers if needed for sorting
-crossover_map = {}
-if "Crossover" in sort_by:
-    with st.spinner("Calculating crossovers..."):
-        crossover_map = calculate_crossovers(symbols_to_process, timeframe)
+# Compute crossovers (ALWAYS calc for sorting)
+with st.spinner("Calculating crossovers..."):
+    crossover_map = calculate_crossovers(symbols_to_process, timeframe)
 
 # Add crossover data to rows
 for row in rows:
     sym = row["RawSymbol"]
     if sym in crossover_map:
+        row["Crossover Date"] = str(crossover_map[sym]["Recent Bullish Crossover"].date())
         row["Recent Bullish Crossover"] = crossover_map[sym]["Recent Bullish Crossover"]
-        row["Recent Bearish Crossover"] = crossover_map[sym]["Recent Bearish Crossover"]
     else:
-        # Default for sorting if calculation failed or didn't run
+        row["Crossover Date"] = "-"
         row["Recent Bullish Crossover"] = pd.Timestamp.min
-        row["Recent Bearish Crossover"] = pd.Timestamp.min
 
 summary_df = pd.DataFrame(rows)
 
 if not summary_df.empty:
-    if sort_by == "Return (%)":
-        summary_df = summary_df.sort_values(by="Return (%)", ascending=False)
-    elif sort_by == "Win Rate (%)":
-        summary_df = summary_df.sort_values(by="RawWinRate", ascending=False)
-    elif sort_by == "Recent Bullish Crossover":
-        summary_df = summary_df.sort_values(by="Recent Bullish Crossover", ascending=False)
-    elif sort_by == "Recent Bearish Crossover":
-        summary_df = summary_df.sort_values(by="Recent Bearish Crossover", ascending=False)
+    # Always sort by Recent Bullish Crossover
+    summary_df = summary_df.sort_values(by="Recent Bullish Crossover", ascending=False)
     
-    # Drop raw cols used for sorting
-    summary_df = summary_df.drop(columns=["RawSymbol", "RawWinRate", "Recent Bullish Crossover", "Recent Bearish Crossover"])
+    # Drop raw cols used for sorting but keep Crossover Date for display
+    summary_df = summary_df.drop(columns=["RawSymbol", "RawWinRate", "Recent Bullish Crossover"])
     summary_df = summary_df.reset_index(drop=True)
 
 
@@ -347,90 +339,155 @@ if has_selection:
 
     # ---------- PLOT ----------
 # ---------- PLOT ----------
-    fig, ax = plt.subplots(figsize=(13, 5))
+    # ---------- PLOT (PLOTLY) ----------
+    import plotly.graph_objects as go
 
-    ax.plot(df["Date"], df["Close"], label="Close", color="gray", alpha=0.6)
-    ax.plot(df["Date"], df["MA_Fast"], label=f"{scenario_ma_type} {fast_ma}", color="green")
-    ax.plot(df["Date"], df["MA_Slow"], label=f"{scenario_ma_type} {slow_ma}", color="orange")
+    fig = go.Figure()
 
-    buys = df[df["Crossover"] == 2]
-    sells = df[df["Crossover"] == -2]
+    # 1. Price Line
+    fig.add_trace(go.Scatter(
+        x=df["Date"], 
+        y=df["Close"], 
+        mode='lines', 
+        name='Close', 
+        line=dict(color='gray', width=1),
+        opacity=0.6
+    ))
 
-    ax.scatter(buys["Date"], buys["Close"], marker="^", color="lime", s=80, label="Buy")
-    ax.scatter(sells["Date"], sells["Close"], marker="v", color="red", s=80, label="Sell")
+    # 2. MA Lines
+    fig.add_trace(go.Scatter(
+        x=df["Date"], 
+        y=df["MA_Fast"], 
+        mode='lines', 
+        name=f'{scenario_ma_type} {fast_ma}', 
+        line=dict(color='green', width=1.5)
+    ))
 
-    # ✅ FORCE X-AXIS TO SHOW LATEST DATE
-    import matplotlib.dates as mdates
-    latest_date = df["Date"].max()
+    fig.add_trace(go.Scatter(
+        x=df["Date"], 
+        y=df["MA_Slow"], 
+        mode='lines', 
+        name=f'{scenario_ma_type} {slow_ma}', 
+        line=dict(color='orange', width=1.5)
+    ))
+
+    # 3. Buy/Sell Arrows (Shifted Left by 1 candle as requested)
+    # Ensure straightforward integer indexing
+    df = df.reset_index(drop=True)
     
-    # Add padding to right side so last label fits (reduced from 5 to 1 day)
-    # Adjust padding for Weekly vs Daily
-    padding_days = 7 if timeframe == "Weekly" else 1
-    padding = pd.Timedelta(days=padding_days) 
-    ax.set_xlim(df["Date"].min(), latest_date + padding)
+    # Get indices of crossovers
+    buy_indices = df.index[df["Crossover"] == 2].to_numpy()
+    sell_indices = df.index[df["Crossover"] == -2].to_numpy()
 
-    # Get default ticks
-    ax.xaxis.set_major_locator(mdates.AutoDateLocator())
-    ticks = list(ax.get_xticks())
+    # Shift left (i - 1), ensuring we don't go below 0
+    buy_indices_shifted = buy_indices - 1
+    buy_indices_shifted = buy_indices_shifted[buy_indices_shifted >= 0]
     
-    # Convert latest_date to matplotlib date number
-    latest_num = mdates.date2num(latest_date)
+    sell_indices_shifted = sell_indices - 1
+    sell_indices_shifted = sell_indices_shifted[sell_indices_shifted >= 0]
+
+    buys = df.iloc[buy_indices_shifted].copy()
+    sells = df.iloc[sell_indices_shifted].copy()
+
+    # Calculate Offsets for Visibility (User Request: Buy Above, Sell Below)
+    # Using a 2% offset from Close to ensure clearance
+    buys["Arrow_Y"] = buys["High"] * 1.02
+    sells["Arrow_Y"] = sells["Low"] * 0.98
+
+    # Buy Arrows (Above, pointing up)
+    fig.add_trace(go.Scatter(
+        x=buys["Date"], 
+        y=buys["Arrow_Y"],
+        mode='markers',
+        name='Buy Signal',
+        marker=dict(symbol='triangle-up', size=15, color='lime', line=dict(width=1.5, color='black'))
+    ))
+
+    # Sell Arrows (Below, pointing down)
+    fig.add_trace(go.Scatter(
+        x=sells["Date"], 
+        y=sells["Arrow_Y"],
+        mode='markers',
+        name='Sell Signal',
+        marker=dict(symbol='triangle-down', size=15, color='red', line=dict(width=1.5, color='black'))
+    ))
     
-    # Filter out ticks too close to the latest date
-    threshold = 10.0 if timeframe == "Weekly" else 2.0
-    ticks = [t for t in ticks if t <= latest_num and abs(t - latest_num) > threshold]
+    # Connector Lines (Dotted) - From Arrow Y to MA
+    shapes = []
     
-    # Add latest date tick
-    ticks.append(latest_num)
-    ticks.sort()
+    def add_connector(row, arrow_y, color):
+        # Determine which MA to connect to (usually the cross point, roughly mean of fast/slow or just fast)
+        target_y = row["MA_Fast"] 
+        return dict(
+            type="line",
+            x0=row["Date"], y0=arrow_y,
+            x1=row["Date"], y1=target_y, 
+            line=dict(color=color, width=1, dash="dot")
+        )
 
-    ax.set_xticks(ticks)
-    ax.xaxis.set_major_formatter(mdates.DateFormatter("%Y-%m-%d"))
-    fig.autofmt_xdate(rotation=30, ha='right')
+    for _, row in buys.iterrows():
+        shapes.append(add_connector(row, row["Arrow_Y"], "lime"))
+    
+    for _, row in sells.iterrows():
+        shapes.append(add_connector(row, row["Arrow_Y"], "red"))
 
-
-    # ✅ Highlight latest price (MUST be before st.pyplot)
+    # 4. Latest Price Annotation
     latest_row = df.iloc[-1]
-    ax.scatter(
-        latest_row["Date"],
-        latest_row["Close"],
-        color="black",
-        s=90,
-        zorder=5,
-        label="Latest"
-    )
-    ax.annotate(
-    latest_date.strftime("%Y-%m-%d"),
-    xy=(latest_date, latest_row["Close"]),
-    xytext=(10, -15),
-    textcoords="offset points",
-    fontsize=9,
-    color="black",
-    arrowprops=dict(arrowstyle="->", alpha=0.4)
+    fig.add_trace(go.Scatter(
+        x=[latest_row["Date"]],
+        y=[latest_row["Close"]],
+        mode='markers',
+        name='Latest',
+        marker=dict(color='black', size=10),
+        showlegend=False
+    ))
+
+    fig.add_annotation(
+        x=latest_row["Date"],
+        y=latest_row["Close"],
+        text=f"<b>{latest_row['Close']:.2f}</b>", # Bold text
+        showarrow=True,
+        arrowhead=1,
+        ax=40,
+        ay=-30,
+        font=dict(color="black", size=12),
+        bgcolor="#ffffff",      # White background
+        bordercolor="#333333",  # Dark border
+        borderwidth=1,
+        opacity=0.9
     )
 
-
-    # ✅ Regime label
+    # 5. Layout Config
     current_signal = df.iloc[-1]["Signal"]
     regime = "Bullish 🟢" if current_signal == 1 else "Bearish 🔴"
 
-    ax.text(
-        0.01, 0.95,
-        f"Current Regime: {regime}",
-        transform=ax.transAxes,
-        fontsize=11,
-        verticalalignment="top",
-        bbox=dict(boxstyle="round", alpha=0.2)
+    fig.update_layout(
+        title=dict(
+            text=f"{selected_symbol} — {scenario_ma_type} ({fast_ma}/{slow_ma}) — {timeframe}<br>Regime: {regime}",
+            y=0.95
+        ),
+        xaxis_title="Date",
+        xaxis=dict(
+            tickformat="%Y-%m-%d",
+            dtick="M1" if timeframe == "Daily" else "M3",
+            showgrid=True, # Restored grid
+            gridcolor="#f0f0f0" # Subtle gray
+        ),
+        yaxis_title="Price",
+        yaxis=dict(showgrid=True, gridcolor="#f0f0f0"), # Restored grid
+        shapes=shapes, # Restored shapes
+
+        template="plotly_white",
+        hovermode="x unified",
+        height=600,
+        legend=dict(orientation="h", y=1.02, xanchor="right", x=1)
     )
 
-    ax.set_title(
-        f"{selected_symbol} — Scenario: {scenario_ma_type} ({fast_ma}/{slow_ma}) — {timeframe}"
-    )
-    ax.legend()
-    ax.grid(alpha=0.3)
+    # Range Slider for zooming (Common in financial charts)
+    fig.update_xaxes(rangeslider_visible=False)
 
-    # ✅ Render LAST
-    st.pyplot(fig)
+    # ✅ Render
+    st.plotly_chart(fig, use_container_width=True)
 
 else:
     st.info("⬆ Select a stock from the table to run a scenario analysis")
