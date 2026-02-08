@@ -1,3 +1,0 @@
-Symbol,Volatility,TrendStrength,Noise,MA_Type,MA_Pair,Return,WinRate,Sharpe,MaxDD,Trades
-BLUEDART.NS,1.28,3.26,84.76,SMA,12/26,-7.83,0.0,-0.15,-23.48,5
-BLUEDART.NS,1.28,3.26,84.76,SMA,10/20,-9.6,0.0,-0.25,-26.57,5

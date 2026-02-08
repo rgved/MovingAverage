@@ -1,3 +1,0 @@
-Symbol,Volatility,TrendStrength,Noise,MA_Type,MA_Pair,Return,WinRate,Sharpe,MaxDD,Trades
-ONESOURCE.NS,5.12,34.64,45.17,EMA,10/20,0.45,42.86,-0.29,-49.97,7
-ONESOURCE.NS,5.12,34.64,45.17,EMA,12/26,-5.46,16.67,-0.32,-49.95,6

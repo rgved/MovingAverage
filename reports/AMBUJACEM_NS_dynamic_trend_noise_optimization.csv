@@ -1,3 +1,0 @@
-Symbol,Volatility,TrendStrength,Noise,MA_Type,MA_Pair,Return,WinRate,Sharpe,MaxDD,Trades
-AMBUJACEM.NS,2.24,10.63,68.89,EMA,10/20,0.96,33.33,-0.01,-19.66,6
-AMBUJACEM.NS,2.24,10.63,68.89,EMA,12/26,-1.11,33.33,0.17,-16.71,6

@@ -1,4 +1,0 @@
-Symbol,Volatility,TrendStrength,Noise,MA_Type,MA_Pair,Return,WinRate,Sharpe,MaxDD,Trades
-SAPPHIRE.NS,2.81,20.27,59.84,EMA,12/26,-8.17,16.67,-1.25,-45.99,6
-SAPPHIRE.NS,2.81,20.27,59.84,EMA,10/20,-8.76,22.22,-1.18,-47.52,9
-SAPPHIRE.NS,2.81,20.27,59.84,EMA,20/50,-16.44,0.0,-1.01,-46.75,5

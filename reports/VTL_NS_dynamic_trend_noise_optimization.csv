@@ -1,3 +1,0 @@
-Symbol,Volatility,TrendStrength,Noise,MA_Type,MA_Pair,Return,WinRate,Sharpe,MaxDD,Trades
-VTL.NS,2.24,5.08,85.09,SMA,12/26,20.13,60.0,-0.27,-26.13,5
-VTL.NS,2.24,5.08,85.09,SMA,10/20,-13.07,28.57,0.36,-24.14,7

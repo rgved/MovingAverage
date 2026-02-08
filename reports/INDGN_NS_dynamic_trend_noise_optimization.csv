@@ -1,3 +1,0 @@
-Symbol,Volatility,TrendStrength,Noise,MA_Type,MA_Pair,Return,WinRate,Sharpe,MaxDD,Trades
-INDGN.NS,1.57,5.76,74.91,EMA,12/26,-7.75,16.67,-0.61,-26.88,6
-INDGN.NS,1.57,5.76,74.91,EMA,10/20,-17.18,16.67,-0.56,-25.72,6

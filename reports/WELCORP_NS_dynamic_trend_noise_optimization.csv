@@ -1,3 +1,0 @@
-Symbol,Volatility,TrendStrength,Noise,MA_Type,MA_Pair,Return,WinRate,Sharpe,MaxDD,Trades
-WELCORP.NS,2.52,5.94,83.94,SMA,10/20,-1.1,40.0,0.27,-26.84,5
-WELCORP.NS,2.52,5.94,83.94,SMA,12/26,-5.31,40.0,0.34,-24.8,5

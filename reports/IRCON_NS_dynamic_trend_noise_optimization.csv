@@ -1,3 +1,0 @@
-Symbol,Volatility,TrendStrength,Noise,MA_Type,MA_Pair,Return,WinRate,Sharpe,MaxDD,Trades
-IRCON.NS,2.72,12.61,70.04,EMA,12/26,-8.55,33.33,-0.25,-32.74,6
-IRCON.NS,2.72,12.61,70.04,EMA,10/20,-8.59,37.5,-0.37,-33.06,8

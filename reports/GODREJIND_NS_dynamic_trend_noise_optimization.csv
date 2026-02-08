@@ -1,3 +1,0 @@
-Symbol,Volatility,TrendStrength,Noise,MA_Type,MA_Pair,Return,WinRate,Sharpe,MaxDD,Trades
-GODREJIND.NS,1.65,1.5,94.11,SMA,10/20,0.59,28.57,0.51,-29.05,7
-GODREJIND.NS,1.65,1.5,94.11,SMA,12/26,-5.08,40.0,0.45,-29.4,5

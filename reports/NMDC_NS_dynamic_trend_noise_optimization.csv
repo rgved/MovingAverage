@@ -1,3 +1,0 @@
-Symbol,Volatility,TrendStrength,Noise,MA_Type,MA_Pair,Return,WinRate,Sharpe,MaxDD,Trades
-NMDC.NS,2.51,2.94,92.7,SMA,12/26,11.16,83.33,0.94,-12.96,6
-NMDC.NS,2.51,2.94,92.7,SMA,10/20,1.6,40.0,1.01,-12.96,5

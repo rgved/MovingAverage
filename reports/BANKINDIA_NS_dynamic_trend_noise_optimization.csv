@@ -1,3 +1,0 @@
-Symbol,Volatility,TrendStrength,Noise,MA_Type,MA_Pair,Return,WinRate,Sharpe,MaxDD,Trades
-BANKINDIA.NS,3.12,1.19,97.39,SMA,10/20,7.77,60.0,1.29,-15.48,5
-BANKINDIA.NS,3.12,1.19,97.39,SMA,12/26,4.19,40.0,1.31,-15.48,5

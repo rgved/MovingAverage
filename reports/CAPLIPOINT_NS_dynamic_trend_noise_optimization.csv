@@ -1,3 +1,0 @@
-Symbol,Volatility,TrendStrength,Noise,MA_Type,MA_Pair,Return,WinRate,Sharpe,MaxDD,Trades
-CAPLIPOINT.NS,1.49,2.47,89.71,SMA,10/20,-2.83,37.5,-0.38,-26.4,8
-CAPLIPOINT.NS,1.49,2.47,89.71,SMA,12/26,-2.91,20.0,-0.28,-28.5,5

@@ -1,4 +1,0 @@
-Symbol,Volatility,TrendStrength,Noise,MA_Type,MA_Pair,Return,WinRate,Sharpe,MaxDD,Trades
-USHAMART.NS,1.32,12.91,45.7,EMA,10/20,7.04,50.0,0.52,-17.99,6
-USHAMART.NS,1.32,12.91,45.7,EMA,20/50,1.79,40.0,0.75,-16.74,5
-USHAMART.NS,1.32,12.91,45.7,EMA,12/26,-4.5,33.33,0.89,-16.74,6

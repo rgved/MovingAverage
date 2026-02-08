@@ -1,3 +1,0 @@
-Symbol,Volatility,TrendStrength,Noise,MA_Type,MA_Pair,Return,WinRate,Sharpe,MaxDD,Trades
-POWERGRID.NS,2.11,0.46,98.19,SMA,12/26,-5.58,20.0,-0.13,-19.3,5
-POWERGRID.NS,2.11,0.46,98.19,SMA,10/20,-6.19,20.0,-0.13,-21.21,5

@@ -1,3 +1,0 @@
-Symbol,Volatility,TrendStrength,Noise,MA_Type,MA_Pair,Return,WinRate,Sharpe,MaxDD,Trades
-TITAGARH.NS,2.23,10.52,71.68,EMA,10/20,9.86,44.44,-0.44,-25.03,9
-TITAGARH.NS,2.23,10.52,71.68,EMA,12/26,-1.61,50.0,-0.02,-25.03,8

@@ -1,3 +1,0 @@
-Symbol,Volatility,TrendStrength,Noise,MA_Type,MA_Pair,Return,WinRate,Sharpe,MaxDD,Trades
-AKUMS.NS,1.32,1.91,90.12,SMA,12/26,-8.31,0.0,-0.64,-30.51,5
-AKUMS.NS,1.32,1.91,90.12,SMA,10/20,-11.12,0.0,-0.67,-29.9,5

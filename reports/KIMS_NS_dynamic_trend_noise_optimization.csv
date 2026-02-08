@@ -1,3 +1,0 @@
-Symbol,Volatility,TrendStrength,Noise,MA_Type,MA_Pair,Return,WinRate,Sharpe,MaxDD,Trades
-KIMS.NS,2.16,9.27,71.7,EMA,12/26,2.62,40.0,-0.18,-22.62,5
-KIMS.NS,2.16,9.27,71.7,EMA,10/20,2.15,50.0,-0.17,-25.94,6

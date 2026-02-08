@@ -1,4 +1,0 @@
-Symbol,Volatility,TrendStrength,Noise,MA_Type,MA_Pair,Return,WinRate,Sharpe,MaxDD,Trades
-VIJAYA.NS,1.53,8.91,68.09,EMA,12/26,-2.67,37.5,-0.03,-25.71,8
-VIJAYA.NS,1.53,8.91,68.09,EMA,10/20,-6.31,12.5,0.06,-23.47,8
-VIJAYA.NS,1.53,8.91,68.09,EMA,20/50,-11.82,16.67,0.29,-21.36,6

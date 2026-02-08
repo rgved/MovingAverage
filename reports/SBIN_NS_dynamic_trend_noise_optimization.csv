@@ -1,3 +1,0 @@
-Symbol,Volatility,TrendStrength,Noise,MA_Type,MA_Pair,Return,WinRate,Sharpe,MaxDD,Trades
-SBIN.NS,1.71,2.3,90.62,SMA,10/20,7.29,60.0,1.38,-11.6,5
-SBIN.NS,1.71,2.3,90.62,SMA,12/26,-0.36,40.0,1.63,-11.6,5

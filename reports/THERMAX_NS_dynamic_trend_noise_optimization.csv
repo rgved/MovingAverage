@@ -1,3 +1,0 @@
-Symbol,Volatility,TrendStrength,Noise,MA_Type,MA_Pair,Return,WinRate,Sharpe,MaxDD,Trades
-THERMAX.NS,1.48,7.85,65.49,EMA,10/20,2.77,50.0,-0.79,-28.4,6
-THERMAX.NS,1.48,7.85,65.49,EMA,12/26,-7.63,14.29,-0.53,-28.5,7

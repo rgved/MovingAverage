@@ -1,3 +1,0 @@
-Symbol,Volatility,TrendStrength,Noise,MA_Type,MA_Pair,Return,WinRate,Sharpe,MaxDD,Trades
-JBCHEPHARM.NS,1.47,1.33,94.38,SMA,10/20,0.9,40.0,0.65,-13.65,5
-JBCHEPHARM.NS,1.47,1.33,94.38,SMA,12/26,-9.9,16.67,0.52,-13.65,6

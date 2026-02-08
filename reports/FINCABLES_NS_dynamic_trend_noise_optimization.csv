@@ -1,3 +1,0 @@
-Symbol,Volatility,TrendStrength,Noise,MA_Type,MA_Pair,Return,WinRate,Sharpe,MaxDD,Trades
-FINCABLES.NS,1.66,7.56,70.84,EMA,10/20,-13.12,0.0,-0.64,-28.56,5
-FINCABLES.NS,1.66,7.56,70.84,EMA,12/26,-16.71,0.0,-0.61,-27.84,6

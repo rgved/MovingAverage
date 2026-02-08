@@ -1,3 +1,0 @@
-Symbol,Volatility,TrendStrength,Noise,MA_Type,MA_Pair,Return,WinRate,Sharpe,MaxDD,Trades
-BBTC.NS,1.99,8.1,75.77,SMA,12/26,7.19,80.0,-0.7,-25.57,5
-BBTC.NS,1.99,8.1,75.77,SMA,10/20,-2.18,33.33,-0.51,-23.52,6

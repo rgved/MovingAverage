@@ -1,3 +1,0 @@
-Symbol,Volatility,TrendStrength,Noise,MA_Type,MA_Pair,Return,WinRate,Sharpe,MaxDD,Trades
-COALINDIA.NS,2.35,0.92,97.33,SMA,12/26,-2.78,28.57,0.83,-8.12,7
-COALINDIA.NS,2.35,0.92,97.33,SMA,10/20,-3.85,16.67,0.59,-10.84,6

@@ -1,3 +1,0 @@
-Symbol,Volatility,TrendStrength,Noise,MA_Type,MA_Pair,Return,WinRate,Sharpe,MaxDD,Trades
-FIVESTAR.NS,2.94,16.9,51.89,EMA,10/20,24.15,80.0,-2.12,-57.71,5
-FIVESTAR.NS,2.94,16.9,51.89,EMA,12/26,6.16,80.0,-1.56,-50.86,5

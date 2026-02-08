@@ -1,4 +1,0 @@
-Symbol,Volatility,TrendStrength,Noise,MA_Type,MA_Pair,Return,WinRate,Sharpe,MaxDD,Trades
-OIL.NS,3.24,15.1,69.95,EMA,20/50,0.14,40.0,0.77,-19.61,5
-OIL.NS,3.24,15.1,69.95,EMA,10/20,-5.53,33.33,0.7,-20.15,6
-OIL.NS,3.24,15.1,69.95,EMA,12/26,-6.17,14.29,0.86,-19.61,7

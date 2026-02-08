@@ -1,3 +1,0 @@
-Symbol,Volatility,TrendStrength,Noise,MA_Type,MA_Pair,Return,WinRate,Sharpe,MaxDD,Trades
-BDL.NS,3.47,13.98,70.28,EMA,10/20,-3.2,37.5,0.51,-34.66,8
-BDL.NS,3.47,13.98,70.28,EMA,12/26,-6.32,16.67,0.45,-34.16,6

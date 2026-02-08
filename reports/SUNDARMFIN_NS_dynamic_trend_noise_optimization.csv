@@ -1,3 +1,0 @@
-Symbol,Volatility,TrendStrength,Noise,MA_Type,MA_Pair,Return,WinRate,Sharpe,MaxDD,Trades
-SUNDARMFIN.NS,2.7,0.09,99.73,SMA,12/26,-1.62,66.67,0.69,-19.03,6
-SUNDARMFIN.NS,2.7,0.09,99.73,SMA,10/20,-12.98,22.22,0.96,-14.75,9

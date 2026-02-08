@@ -1,3 +1,0 @@
-Symbol,Volatility,TrendStrength,Noise,MA_Type,MA_Pair,Return,WinRate,Sharpe,MaxDD,Trades
-GRAPHITE.NS,3.25,8.41,83.69,SMA,10/20,2.78,50.0,0.57,-25.45,6
-GRAPHITE.NS,3.25,8.41,83.69,SMA,12/26,-7.74,28.57,0.69,-25.45,7

@@ -1,3 +1,0 @@
-Symbol,Volatility,TrendStrength,Noise,MA_Type,MA_Pair,Return,WinRate,Sharpe,MaxDD,Trades
-HFCL.NS,3.17,1.09,97.92,SMA,10/20,-12.28,0.0,-0.61,-33.88,5
-HFCL.NS,3.17,1.09,97.92,SMA,12/26,-21.33,0.0,-0.53,-33.03,6

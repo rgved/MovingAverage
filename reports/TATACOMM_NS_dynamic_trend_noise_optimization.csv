@@ -1,4 +1,0 @@
-Symbol,Volatility,TrendStrength,Noise,MA_Type,MA_Pair,Return,WinRate,Sharpe,MaxDD,Trades
-TATACOMM.NS,2.01,12.91,54.84,EMA,10/20,10.73,66.67,-0.06,-22.46,6
-TATACOMM.NS,2.01,12.91,54.84,EMA,12/26,-4.91,40.0,0.12,-22.46,5
-TATACOMM.NS,2.01,12.91,54.84,EMA,50/100,-5.14,40.0,0.15,-22.46,5

@@ -1,3 +1,0 @@
-Symbol,Volatility,TrendStrength,Noise,MA_Type,MA_Pair,Return,WinRate,Sharpe,MaxDD,Trades
-JSWENERGY.NS,2.58,12.65,66.34,EMA,12/26,-3.2,20.0,-0.14,-22.97,5
-JSWENERGY.NS,2.58,12.65,66.34,EMA,10/20,-6.41,25.0,-0.08,-26.71,8

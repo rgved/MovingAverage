@@ -1,3 +1,0 @@
-Symbol,Volatility,TrendStrength,Noise,MA_Type,MA_Pair,Return,WinRate,Sharpe,MaxDD,Trades
-SCI.NS,2.63,5.68,86.45,SMA,10/20,10.28,42.86,0.31,-26.31,7
-SCI.NS,2.63,5.68,86.45,SMA,12/26,8.45,80.0,0.3,-26.88,5

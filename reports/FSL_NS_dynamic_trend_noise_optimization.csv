@@ -1,5 +1,0 @@
-Symbol,Volatility,TrendStrength,Noise,MA_Type,MA_Pair,Return,WinRate,Sharpe,MaxDD,Trades
-FSL.NS,1.85,9.44,68.81,EMA,10/20,9.44,55.56,-0.29,-24.2,9
-FSL.NS,1.85,9.44,68.81,EMA,12/26,6.83,57.14,-0.2,-24.2,7
-FSL.NS,1.85,9.44,68.81,EMA,20/50,-0.5,42.86,-0.1,-24.2,7
-FSL.NS,1.85,9.44,68.81,EMA,50/200,-0.64,40.0,-0.0,-24.2,5

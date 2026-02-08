@@ -1,3 +1,0 @@
-Symbol,Volatility,TrendStrength,Noise,MA_Type,MA_Pair,Return,WinRate,Sharpe,MaxDD,Trades
-AMBER.NS,2.32,10.62,70.48,EMA,12/26,-13.36,16.67,0.03,-35.38,6
-AMBER.NS,2.32,10.62,70.48,EMA,10/20,-15.36,14.29,0.19,-35.38,7

@@ -1,3 +1,0 @@
-Symbol,Volatility,TrendStrength,Noise,MA_Type,MA_Pair,Return,WinRate,Sharpe,MaxDD,Trades
-DLF.NS,2.24,11.96,67.22,EMA,12/26,-8.98,20.0,-0.62,-32.62,5
-DLF.NS,2.24,11.96,67.22,EMA,10/20,-10.15,22.22,-0.58,-33.2,9

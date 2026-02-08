@@ -1,3 +1,0 @@
-Symbol,Volatility,TrendStrength,Noise,MA_Type,MA_Pair,Return,WinRate,Sharpe,MaxDD,Trades
-ACMESOLAR.NS,2.5,8.87,78.31,SMA,12/26,3.47,60.0,0.09,-35.99,5
-ACMESOLAR.NS,2.5,8.87,78.31,SMA,10/20,0.72,60.0,0.3,-37.95,5

@@ -1,3 +1,0 @@
-Symbol,Volatility,TrendStrength,Noise,MA_Type,MA_Pair,Return,WinRate,Sharpe,MaxDD,Trades
-VENTIVE.NS,1.91,0.81,97.24,SMA,12/26,-4.39,33.33,0.15,-27.76,6
-VENTIVE.NS,1.91,0.81,97.24,SMA,10/20,-11.25,14.29,0.48,-27.76,7

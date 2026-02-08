@@ -1,3 +1,0 @@
-Symbol,Volatility,TrendStrength,Noise,MA_Type,MA_Pair,Return,WinRate,Sharpe,MaxDD,Trades
-NESTLEIND.NS,1.61,0.48,98.01,SMA,10/20,5.6,50.0,0.46,-11.88,6
-NESTLEIND.NS,1.61,0.48,98.01,SMA,12/26,0.56,40.0,0.76,-11.88,5

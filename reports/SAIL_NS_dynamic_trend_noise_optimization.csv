@@ -1,3 +1,0 @@
-Symbol,Volatility,TrendStrength,Noise,MA_Type,MA_Pair,Return,WinRate,Sharpe,MaxDD,Trades
-SAIL.NS,2.42,1.45,96.36,SMA,10/20,17.89,71.43,0.88,-13.35,7
-SAIL.NS,2.42,1.45,96.36,SMA,12/26,3.47,60.0,1.19,-13.35,5

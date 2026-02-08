@@ -1,3 +1,0 @@
-Symbol,Volatility,TrendStrength,Noise,MA_Type,MA_Pair,Return,WinRate,Sharpe,MaxDD,Trades
-HBLENGINE.NS,3.89,20.41,68.39,EMA,12/26,-6.16,40.0,0.82,-35.4,5
-HBLENGINE.NS,3.89,20.41,68.39,EMA,10/20,-6.2,60.0,0.82,-36.46,5

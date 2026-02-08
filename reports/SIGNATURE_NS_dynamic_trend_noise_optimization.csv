@@ -1,3 +1,0 @@
-Symbol,Volatility,TrendStrength,Noise,MA_Type,MA_Pair,Return,WinRate,Sharpe,MaxDD,Trades
-SIGNATURE.NS,3.43,21.08,54.73,EMA,10/20,-8.18,12.5,-0.84,-35.8,8
-SIGNATURE.NS,3.43,21.08,54.73,EMA,12/26,-10.94,0.0,-0.98,-38.19,5

@@ -1,3 +1,0 @@
-Symbol,Volatility,TrendStrength,Noise,MA_Type,MA_Pair,Return,WinRate,Sharpe,MaxDD,Trades
-ADANIGREEN.NS,4.21,18.1,67.33,EMA,10/20,0.29,57.14,-0.26,-34.54,7
-ADANIGREEN.NS,4.21,18.1,67.33,EMA,12/26,-3.74,40.0,-0.17,-32.93,5

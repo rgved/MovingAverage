@@ -1,3 +1,0 @@
-Symbol,Volatility,TrendStrength,Noise,MA_Type,MA_Pair,Return,WinRate,Sharpe,MaxDD,Trades
-BLUESTARCO.NS,1.81,0.58,97.99,SMA,12/26,-7.49,0.0,-0.12,-30.69,5
-BLUESTARCO.NS,1.81,0.58,97.99,SMA,10/20,-19.49,0.0,0.12,-30.69,7

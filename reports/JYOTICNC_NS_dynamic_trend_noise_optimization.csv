@@ -1,3 +1,0 @@
-Symbol,Volatility,TrendStrength,Noise,MA_Type,MA_Pair,Return,WinRate,Sharpe,MaxDD,Trades
-JYOTICNC.NS,2.61,22.09,45.13,EMA,10/20,4.89,57.14,-0.61,-40.95,7
-JYOTICNC.NS,2.61,22.09,45.13,EMA,12/26,-9.65,33.33,-0.42,-36.46,6

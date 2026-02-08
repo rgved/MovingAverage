@@ -1,3 +1,0 @@
-Symbol,Volatility,TrendStrength,Noise,MA_Type,MA_Pair,Return,WinRate,Sharpe,MaxDD,Trades
-GMRAIRPORT.NS,2.21,11.09,65.03,EMA,10/20,7.86,60.0,1.06,-17.12,5
-GMRAIRPORT.NS,2.21,11.09,65.03,EMA,12/26,5.51,50.0,1.08,-17.12,6

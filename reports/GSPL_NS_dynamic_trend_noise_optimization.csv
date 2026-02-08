@@ -1,3 +1,0 @@
-Symbol,Volatility,TrendStrength,Noise,MA_Type,MA_Pair,Return,WinRate,Sharpe,MaxDD,Trades
-GSPL.NS,1.4,6.93,71.0,EMA,10/20,-1.27,40.0,-0.67,-23.62,5
-GSPL.NS,1.4,6.93,71.0,EMA,12/26,-1.5,16.67,-0.72,-23.89,6

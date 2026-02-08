@@ -1,3 +1,0 @@
-Symbol,Volatility,TrendStrength,Noise,MA_Type,MA_Pair,Return,WinRate,Sharpe,MaxDD,Trades
-POLYMED.NS,2.02,15.87,55.42,EMA,10/20,-3.72,33.33,-1.36,-49.1,6
-POLYMED.NS,2.02,15.87,55.42,EMA,12/26,-16.92,14.29,-0.89,-43.51,7

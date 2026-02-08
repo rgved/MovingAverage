@@ -1,4 +1,0 @@
-Symbol,Volatility,TrendStrength,Noise,MA_Type,MA_Pair,Return,WinRate,Sharpe,MaxDD,Trades
-PPLPHARMA.NS,1.78,13.31,52.28,EMA,20/50,-3.09,20.0,-1.09,-36.19,5
-PPLPHARMA.NS,1.78,13.31,52.28,EMA,10/20,-5.76,25.0,-0.91,-31.77,8
-PPLPHARMA.NS,1.78,13.31,52.28,EMA,12/26,-8.45,16.67,-0.97,-33.45,6

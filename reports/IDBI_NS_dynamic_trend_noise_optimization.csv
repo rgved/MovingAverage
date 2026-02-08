@@ -1,3 +1,0 @@
-Symbol,Volatility,TrendStrength,Noise,MA_Type,MA_Pair,Return,WinRate,Sharpe,MaxDD,Trades
-IDBI.NS,2.28,10.22,73.15,EMA,10/20,13.79,50.0,0.52,-18.29,8
-IDBI.NS,2.28,10.22,73.15,EMA,12/26,-0.91,42.86,0.87,-18.29,7

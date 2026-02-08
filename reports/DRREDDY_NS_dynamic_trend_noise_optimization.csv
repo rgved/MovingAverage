@@ -1,3 +1,0 @@
-Symbol,Volatility,TrendStrength,Noise,MA_Type,MA_Pair,Return,WinRate,Sharpe,MaxDD,Trades
-DRREDDY.NS,1.76,5.4,77.87,SMA,10/20,-2.54,40.0,0.14,-13.24,5
-DRREDDY.NS,1.76,5.4,77.87,SMA,12/26,-6.73,20.0,0.1,-12.89,5

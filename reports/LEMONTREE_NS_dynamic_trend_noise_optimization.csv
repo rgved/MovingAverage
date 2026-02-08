@@ -1,4 +1,0 @@
-Symbol,Volatility,TrendStrength,Noise,MA_Type,MA_Pair,Return,WinRate,Sharpe,MaxDD,Trades
-LEMONTREE.NS,2.23,14.97,61.06,EMA,20/50,-4.22,20.0,-0.26,-30.29,5
-LEMONTREE.NS,2.23,14.97,61.06,EMA,12/26,-6.85,22.22,-0.25,-27.93,9
-LEMONTREE.NS,2.23,14.97,61.06,EMA,10/20,-12.74,11.11,-0.38,-29.47,9

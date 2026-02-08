@@ -1,3 +1,0 @@
-Symbol,Volatility,TrendStrength,Noise,MA_Type,MA_Pair,Return,WinRate,Sharpe,MaxDD,Trades
-MARICO.NS,1.02,6.55,60.73,EMA,10/20,6.31,50.0,0.23,-13.19,6
-MARICO.NS,1.02,6.55,60.73,EMA,12/26,3.76,42.86,0.18,-13.19,7

@@ -1,3 +1,0 @@
-Symbol,Volatility,TrendStrength,Noise,MA_Type,MA_Pair,Return,WinRate,Sharpe,MaxDD,Trades
-APOLLOTYRE.NS,1.74,4.5,83.04,SMA,10/20,1.21,40.0,0.58,-14.79,5
-APOLLOTYRE.NS,1.74,4.5,83.04,SMA,12/26,-1.56,40.0,0.54,-12.39,5

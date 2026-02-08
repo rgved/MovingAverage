@@ -1,3 +1,0 @@
-Symbol,Volatility,TrendStrength,Noise,MA_Type,MA_Pair,Return,WinRate,Sharpe,MaxDD,Trades
-MAHSEAMLES.NS,1.33,7.51,64.71,EMA,10/20,1.02,60.0,-0.56,-35.14,10
-MAHSEAMLES.NS,1.33,7.51,64.71,EMA,12/26,-3.45,60.0,-0.34,-31.82,5

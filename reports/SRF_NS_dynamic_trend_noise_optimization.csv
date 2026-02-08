@@ -1,4 +1,0 @@
-Symbol,Volatility,TrendStrength,Noise,MA_Type,MA_Pair,Return,WinRate,Sharpe,MaxDD,Trades
-SRF.NS,2.5,9.31,73.27,EMA,10/20,5.25,50.0,-0.31,-20.73,6
-SRF.NS,2.5,9.31,73.27,EMA,12/26,-5.38,20.0,-0.19,-18.68,5
-SRF.NS,2.5,9.31,73.27,EMA,20/50,-7.77,20.0,-0.36,-22.15,5

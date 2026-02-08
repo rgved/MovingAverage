@@ -1,4 +1,0 @@
-Symbol,Volatility,TrendStrength,Noise,MA_Type,MA_Pair,Return,WinRate,Sharpe,MaxDD,Trades
-AWL.NS,1.32,9.05,60.32,EMA,10/20,-2.75,20.0,-0.61,-25.89,5
-AWL.NS,1.32,9.05,60.32,EMA,50/100,-4.75,40.0,-0.6,-25.91,5
-AWL.NS,1.32,9.05,60.32,EMA,12/26,-10.11,28.57,-0.51,-25.22,7

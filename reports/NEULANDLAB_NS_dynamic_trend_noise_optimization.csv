@@ -1,3 +1,0 @@
-Symbol,Volatility,TrendStrength,Noise,MA_Type,MA_Pair,Return,WinRate,Sharpe,MaxDD,Trades
-NEULANDLAB.NS,2.65,12.79,72.29,EMA,12/26,-2.94,60.0,-0.05,-30.69,5
-NEULANDLAB.NS,2.65,12.79,72.29,EMA,10/20,-18.29,28.57,0.1,-30.24,7

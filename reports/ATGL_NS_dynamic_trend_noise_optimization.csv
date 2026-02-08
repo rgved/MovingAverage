@@ -1,3 +1,0 @@
-Symbol,Volatility,TrendStrength,Noise,MA_Type,MA_Pair,Return,WinRate,Sharpe,MaxDD,Trades
-ATGL.NS,1.78,10.05,60.5,EMA,10/20,17.35,50.0,-0.89,-35.11,6
-ATGL.NS,1.78,10.05,60.5,EMA,12/26,13.82,20.0,-0.98,-39.52,5

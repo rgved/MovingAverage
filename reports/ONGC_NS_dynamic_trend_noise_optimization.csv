@@ -1,3 +1,0 @@
-Symbol,Volatility,TrendStrength,Noise,MA_Type,MA_Pair,Return,WinRate,Sharpe,MaxDD,Trades
-ONGC.NS,2.8,6.66,83.15,SMA,10/20,-3.24,33.33,0.03,-15.43,6
-ONGC.NS,2.8,6.66,83.15,SMA,12/26,-3.92,33.33,0.19,-16.83,6

@@ -1,3 +1,0 @@
-Symbol,Volatility,TrendStrength,Noise,MA_Type,MA_Pair,Return,WinRate,Sharpe,MaxDD,Trades
-CHALET.NS,1.68,2.13,91.2,SMA,10/20,-5.4,42.86,0.36,-21.09,7
-CHALET.NS,1.68,2.13,91.2,SMA,12/26,-10.75,14.29,0.6,-22.69,7

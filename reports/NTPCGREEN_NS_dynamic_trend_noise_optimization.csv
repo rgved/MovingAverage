@@ -1,3 +1,0 @@
-Symbol,Volatility,TrendStrength,Noise,MA_Type,MA_Pair,Return,WinRate,Sharpe,MaxDD,Trades
-NTPCGREEN.NS,2.06,11.28,62.0,EMA,10/20,-6.57,25.0,-0.74,-26.27,8
-NTPCGREEN.NS,2.06,11.28,62.0,EMA,12/26,-9.48,16.67,-0.74,-24.37,6

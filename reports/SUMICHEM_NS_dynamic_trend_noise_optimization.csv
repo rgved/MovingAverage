@@ -1,4 +1,0 @@
-Symbol,Volatility,TrendStrength,Noise,MA_Type,MA_Pair,Return,WinRate,Sharpe,MaxDD,Trades
-SUMICHEM.NS,2.32,13.73,63.19,EMA,10/20,2.27,60.0,-0.71,-38.23,5
-SUMICHEM.NS,2.32,13.73,63.19,EMA,20/50,-5.88,20.0,-0.56,-36.36,5
-SUMICHEM.NS,2.32,13.73,63.19,EMA,12/26,-8.76,20.0,-0.54,-37.64,5

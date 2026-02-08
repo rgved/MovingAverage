@@ -1,3 +1,0 @@
-Symbol,Volatility,TrendStrength,Noise,MA_Type,MA_Pair,Return,WinRate,Sharpe,MaxDD,Trades
-GICRE.NS,1.14,1.97,89.64,SMA,10/20,-6.07,28.57,0.08,-17.46,7
-GICRE.NS,1.14,1.97,89.64,SMA,12/26,-16.43,0.0,0.09,-17.07,7

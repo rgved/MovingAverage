@@ -1,3 +1,0 @@
-Symbol,Volatility,TrendStrength,Noise,MA_Type,MA_Pair,Return,WinRate,Sharpe,MaxDD,Trades
-BALKRISIND.NS,1.1,4.38,74.69,SMA,10/20,5.34,66.67,-0.91,-24.71,6
-BALKRISIND.NS,1.1,4.38,74.69,SMA,12/26,-0.07,40.0,-0.67,-22.77,5

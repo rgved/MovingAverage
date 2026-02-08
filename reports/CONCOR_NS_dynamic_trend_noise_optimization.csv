@@ -1,3 +1,0 @@
-Symbol,Volatility,TrendStrength,Noise,MA_Type,MA_Pair,Return,WinRate,Sharpe,MaxDD,Trades
-CONCOR.NS,1.41,3.88,80.74,SMA,10/20,-10.33,28.57,-0.35,-27.31,7
-CONCOR.NS,1.41,3.88,80.74,SMA,12/26,-16.17,0.0,-0.62,-27.28,6

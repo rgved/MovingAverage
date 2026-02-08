@@ -1,3 +1,0 @@
-Symbol,Volatility,TrendStrength,Noise,MA_Type,MA_Pair,Return,WinRate,Sharpe,MaxDD,Trades
-HUDCO.NS,2.39,17.02,56.55,EMA,10/20,-0.75,33.33,0.02,-23.67,6
-HUDCO.NS,2.39,17.02,56.55,EMA,12/26,-1.99,40.0,-0.04,-23.11,5

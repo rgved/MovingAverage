@@ -1,3 +1,0 @@
-Symbol,Volatility,TrendStrength,Noise,MA_Type,MA_Pair,Return,WinRate,Sharpe,MaxDD,Trades
-SUNPHARMA.NS,1.39,5.84,73.26,EMA,12/26,-0.41,40.0,-0.23,-13.79,5
-SUNPHARMA.NS,1.39,5.84,73.26,EMA,10/20,-0.8,40.0,-0.28,-13.99,5

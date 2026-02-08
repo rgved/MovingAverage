@@ -1,3 +1,0 @@
-Symbol,Volatility,TrendStrength,Noise,MA_Type,MA_Pair,Return,WinRate,Sharpe,MaxDD,Trades
-UCOBANK.NS,1.41,5.45,76.35,SMA,12/26,-0.88,40.0,-1.11,-34.65,5
-UCOBANK.NS,1.41,5.45,76.35,SMA,10/20,-13.9,20.0,-0.87,-32.82,5

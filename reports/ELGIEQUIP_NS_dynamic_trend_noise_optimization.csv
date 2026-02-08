@@ -1,3 +1,0 @@
-Symbol,Volatility,TrendStrength,Noise,MA_Type,MA_Pair,Return,WinRate,Sharpe,MaxDD,Trades
-ELGIEQUIP.NS,2.06,9.04,75.06,SMA,10/20,-8.94,16.67,-0.14,-29.09,6
-ELGIEQUIP.NS,2.06,9.04,75.06,SMA,12/26,-10.77,20.0,-0.23,-27.61,5

@@ -1,3 +1,0 @@
-Symbol,Volatility,TrendStrength,Noise,MA_Type,MA_Pair,Return,WinRate,Sharpe,MaxDD,Trades
-IFCI.NS,4.86,5.71,91.56,SMA,10/20,-4.63,42.86,0.4,-32.7,7
-IFCI.NS,4.86,5.71,91.56,SMA,12/26,-23.93,16.67,0.42,-37.34,6

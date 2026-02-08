@@ -1,4 +1,0 @@
-Symbol,Volatility,TrendStrength,Noise,MA_Type,MA_Pair,Return,WinRate,Sharpe,MaxDD,Trades
-NBCC.NS,2.03,18.96,52.18,EMA,20/50,-2.94,40.0,0.4,-23.65,5
-NBCC.NS,2.03,18.96,52.18,EMA,10/20,-5.31,40.0,0.28,-29.02,5
-NBCC.NS,2.03,18.96,52.18,EMA,12/26,-5.67,60.0,0.25,-25.91,5

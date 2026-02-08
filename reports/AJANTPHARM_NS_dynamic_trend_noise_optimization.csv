@@ -1,3 +1,0 @@
-Symbol,Volatility,TrendStrength,Noise,MA_Type,MA_Pair,Return,WinRate,Sharpe,MaxDD,Trades
-AJANTPHARM.NS,1.27,4.36,76.91,SMA,10/20,4.48,50.0,0.17,-16.78,6
-AJANTPHARM.NS,1.27,4.36,76.91,SMA,12/26,0.19,40.0,0.01,-15.4,5

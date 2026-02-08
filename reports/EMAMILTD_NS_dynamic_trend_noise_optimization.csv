@@ -1,3 +1,0 @@
-Symbol,Volatility,TrendStrength,Noise,MA_Type,MA_Pair,Return,WinRate,Sharpe,MaxDD,Trades
-EMAMILTD.NS,1.45,8.43,67.86,EMA,10/20,-8.88,25.0,-0.33,-24.56,8
-EMAMILTD.NS,1.45,8.43,67.86,EMA,12/26,-11.91,0.0,-0.37,-22.53,6

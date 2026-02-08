@@ -1,3 +1,0 @@
-Symbol,Volatility,TrendStrength,Noise,MA_Type,MA_Pair,Return,WinRate,Sharpe,MaxDD,Trades
-BAJAJFINSV.NS,1.24,5.35,71.62,EMA,10/20,-1.09,33.33,0.32,-11.25,9
-BAJAJFINSV.NS,1.24,5.35,71.62,EMA,12/26,-6.23,14.29,0.6,-11.25,7

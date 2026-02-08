@@ -1,3 +1,0 @@
-Symbol,Volatility,TrendStrength,Noise,MA_Type,MA_Pair,Return,WinRate,Sharpe,MaxDD,Trades
-PGHH.NS,1.09,9.02,51.17,EMA,10/20,-4.78,37.5,-0.78,-18.49,8
-PGHH.NS,1.09,9.02,51.17,EMA,12/26,-8.03,28.57,-0.8,-17.9,7

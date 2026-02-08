@@ -1,3 +1,0 @@
-Symbol,Volatility,TrendStrength,Noise,MA_Type,MA_Pair,Return,WinRate,Sharpe,MaxDD,Trades
-PNB.NS,1.98,2.45,91.69,SMA,10/20,6.22,80.0,0.89,-13.33,5
-PNB.NS,1.98,2.45,91.69,SMA,12/26,-1.96,40.0,0.98,-13.33,5

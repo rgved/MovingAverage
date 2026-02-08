@@ -1,3 +1,0 @@
-Symbol,Volatility,TrendStrength,Noise,MA_Type,MA_Pair,Return,WinRate,Sharpe,MaxDD,Trades
-AFFLE.NS,1.63,12.46,53.84,EMA,12/26,1.77,50.0,0.38,-27.57,6
-AFFLE.NS,1.63,12.46,53.84,EMA,10/20,-6.07,28.57,0.34,-29.09,7

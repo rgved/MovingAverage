@@ -1,3 +1,0 @@
-Symbol,Volatility,TrendStrength,Noise,MA_Type,MA_Pair,Return,WinRate,Sharpe,MaxDD,Trades
-RECLTD.NS,1.9,4.7,83.99,SMA,10/20,2.07,42.86,-0.55,-24.58,7
-RECLTD.NS,1.9,4.7,83.99,SMA,12/26,-8.4,16.67,-0.39,-24.04,6

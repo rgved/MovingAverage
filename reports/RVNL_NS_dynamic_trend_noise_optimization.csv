@@ -1,3 +1,0 @@
-Symbol,Volatility,TrendStrength,Noise,MA_Type,MA_Pair,Return,WinRate,Sharpe,MaxDD,Trades
-RVNL.NS,2.48,10.58,71.35,EMA,10/20,6.67,66.67,-0.66,-30.95,6
-RVNL.NS,2.48,10.58,71.35,EMA,12/26,5.76,40.0,-0.67,-31.81,5

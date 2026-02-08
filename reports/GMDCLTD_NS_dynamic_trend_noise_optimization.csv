@@ -1,3 +1,0 @@
-Symbol,Volatility,TrendStrength,Noise,MA_Type,MA_Pair,Return,WinRate,Sharpe,MaxDD,Trades
-GMDCLTD.NS,3.87,5.38,89.77,SMA,10/20,-6.16,14.29,1.39,-25.54,7
-GMDCLTD.NS,3.87,5.38,89.77,SMA,12/26,-6.49,40.0,1.54,-25.5,5

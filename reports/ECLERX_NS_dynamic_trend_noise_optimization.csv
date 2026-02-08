@@ -1,3 +1,0 @@
-Symbol,Volatility,TrendStrength,Noise,MA_Type,MA_Pair,Return,WinRate,Sharpe,MaxDD,Trades
-ECLERX.NS,2.45,1.41,95.83,SMA,12/26,5.68,80.0,0.91,-27.18,5
-ECLERX.NS,2.45,1.41,95.83,SMA,10/20,3.13,50.0,1.18,-26.14,6

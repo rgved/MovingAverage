@@ -1,3 +1,0 @@
-Symbol,Volatility,TrendStrength,Noise,MA_Type,MA_Pair,Return,WinRate,Sharpe,MaxDD,Trades
-KEI.NS,2.13,9.92,69.25,EMA,12/26,6.38,40.0,0.16,-35.99,5
-KEI.NS,2.13,9.92,69.25,EMA,10/20,2.23,33.33,0.21,-35.99,6

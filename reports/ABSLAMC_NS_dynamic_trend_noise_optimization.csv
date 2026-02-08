@@ -1,3 +1,0 @@
-Symbol,Volatility,TrendStrength,Noise,MA_Type,MA_Pair,Return,WinRate,Sharpe,MaxDD,Trades
-ABSLAMC.NS,1.93,9.02,69.09,EMA,10/20,-7.03,0.0,0.61,-19.24,5
-ABSLAMC.NS,1.93,9.02,69.09,EMA,12/26,-21.97,0.0,0.65,-19.91,5

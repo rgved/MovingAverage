@@ -1,3 +1,0 @@
-Symbol,Volatility,TrendStrength,Noise,MA_Type,MA_Pair,Return,WinRate,Sharpe,MaxDD,Trades
-KOTAKBANK.NS,1.13,6.85,57.94,EMA,12/26,-6.39,20.0,0.61,-13.64,5
-KOTAKBANK.NS,1.13,6.85,57.94,EMA,10/20,-6.93,20.0,0.54,-13.64,5

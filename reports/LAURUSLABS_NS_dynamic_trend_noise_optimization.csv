@@ -1,3 +1,0 @@
-Symbol,Volatility,TrendStrength,Noise,MA_Type,MA_Pair,Return,WinRate,Sharpe,MaxDD,Trades
-LAURUSLABS.NS,2.18,13.53,65.04,EMA,10/20,10.18,80.0,1.47,-18.69,5
-LAURUSLABS.NS,2.18,13.53,65.04,EMA,12/26,8.35,80.0,1.39,-18.69,5

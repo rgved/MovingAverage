@@ -1,3 +1,0 @@
-Symbol,Volatility,TrendStrength,Noise,MA_Type,MA_Pair,Return,WinRate,Sharpe,MaxDD,Trades
-FLUOROCHEM.NS,1.74,15.3,50.38,EMA,10/20,4.77,55.56,-0.6,-23.25,9
-FLUOROCHEM.NS,1.74,15.3,50.38,EMA,12/26,-0.53,44.44,-0.48,-22.96,9

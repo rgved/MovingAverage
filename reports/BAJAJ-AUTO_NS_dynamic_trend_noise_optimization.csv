@@ -1,3 +1,0 @@
-Symbol,Volatility,TrendStrength,Noise,MA_Type,MA_Pair,Return,WinRate,Sharpe,MaxDD,Trades
-BAJAJ-AUTO.NS,1.18,0.01,99.94,SMA,12/26,4.52,40.0,0.36,-18.42,5
-BAJAJ-AUTO.NS,1.18,0.01,99.94,SMA,10/20,-5.31,28.57,0.5,-18.69,7

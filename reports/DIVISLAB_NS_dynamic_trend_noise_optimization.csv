@@ -1,4 +1,0 @@
-Symbol,Volatility,TrendStrength,Noise,MA_Type,MA_Pair,Return,WinRate,Sharpe,MaxDD,Trades
-DIVISLAB.NS,1.62,6.46,73.63,EMA,12/26,1.06,40.0,0.04,-18.53,5
-DIVISLAB.NS,1.62,6.46,73.63,EMA,10/20,0.15,33.33,0.06,-18.53,6
-DIVISLAB.NS,1.62,6.46,73.63,EMA,20/50,-9.0,0.0,-0.02,-18.53,5

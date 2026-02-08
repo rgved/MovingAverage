@@ -1,3 +1,0 @@
-Symbol,Volatility,TrendStrength,Noise,MA_Type,MA_Pair,Return,WinRate,Sharpe,MaxDD,Trades
-RAINBOW.NS,1.35,12.6,35.89,EMA,12/26,-4.4,40.0,-0.65,-30.37,5
-RAINBOW.NS,1.35,12.6,35.89,EMA,10/20,-11.61,14.29,-0.57,-30.85,7

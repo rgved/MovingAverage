@@ -1,3 +1,0 @@
-Symbol,Volatility,TrendStrength,Noise,MA_Type,MA_Pair,Return,WinRate,Sharpe,MaxDD,Trades
-BANKBARODA.NS,2.04,9.53,67.34,EMA,10/20,5.69,50.0,1.14,-14.2,8
-BANKBARODA.NS,2.04,9.53,67.34,EMA,12/26,-0.72,42.86,1.18,-14.2,7

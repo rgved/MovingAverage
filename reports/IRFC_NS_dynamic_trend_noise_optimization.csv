@@ -1,3 +1,0 @@
-Symbol,Volatility,TrendStrength,Noise,MA_Type,MA_Pair,Return,WinRate,Sharpe,MaxDD,Trades
-IRFC.NS,2.22,9.93,68.85,EMA,10/20,11.8,42.86,-1.26,-32.21,7
-IRFC.NS,2.22,9.93,68.85,EMA,12/26,-12.09,16.67,-0.25,-24.58,6

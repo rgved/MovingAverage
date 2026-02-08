@@ -1,3 +1,0 @@
-Symbol,Volatility,TrendStrength,Noise,MA_Type,MA_Pair,Return,WinRate,Sharpe,MaxDD,Trades
-SOBHA.NS,3.15,9.84,79.05,SMA,10/20,6.01,60.0,-0.14,-27.46,5
-SOBHA.NS,3.15,9.84,79.05,SMA,12/26,0.06,50.0,0.03,-22.99,6

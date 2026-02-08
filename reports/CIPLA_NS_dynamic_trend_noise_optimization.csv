@@ -1,4 +1,0 @@
-Symbol,Volatility,TrendStrength,Noise,MA_Type,MA_Pair,Return,WinRate,Sharpe,MaxDD,Trades
-CIPLA.NS,1.43,13.7,34.29,EMA,20/50,-5.33,16.67,-0.59,-21.16,6
-CIPLA.NS,1.43,13.7,34.29,EMA,12/26,-6.95,16.67,-0.53,-21.16,6
-CIPLA.NS,1.43,13.7,34.29,EMA,10/20,-16.2,22.22,-0.18,-17.78,9

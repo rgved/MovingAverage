@@ -1,3 +1,0 @@
-Symbol,Volatility,TrendStrength,Noise,MA_Type,MA_Pair,Return,WinRate,Sharpe,MaxDD,Trades
-ITI.NS,1.94,9.22,68.88,EMA,10/20,3.92,50.0,0.01,-24.93,6
-ITI.NS,1.94,9.22,68.88,EMA,12/26,-6.18,20.0,0.08,-24.93,5

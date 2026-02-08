@@ -1,3 +1,0 @@
-Symbol,Volatility,TrendStrength,Noise,MA_Type,MA_Pair,Return,WinRate,Sharpe,MaxDD,Trades
-KEC.NS,2.8,18.18,62.86,EMA,10/20,4.07,60.0,-0.63,-32.59,5
-KEC.NS,2.8,18.18,62.86,EMA,12/26,-5.87,40.0,-0.3,-34.34,5

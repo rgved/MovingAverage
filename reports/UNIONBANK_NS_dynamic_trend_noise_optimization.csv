@@ -1,3 +1,0 @@
-Symbol,Volatility,TrendStrength,Noise,MA_Type,MA_Pair,Return,WinRate,Sharpe,MaxDD,Trades
-UNIONBANK.NS,2.88,5.4,87.2,SMA,12/26,7.42,60.0,1.5,-16.53,5
-UNIONBANK.NS,2.88,5.4,87.2,SMA,10/20,-4.58,37.5,1.58,-18.96,8

@@ -1,3 +1,0 @@
-Symbol,Volatility,TrendStrength,Noise,MA_Type,MA_Pair,Return,WinRate,Sharpe,MaxDD,Trades
-PCBL.NS,2.29,10.22,72.18,EMA,10/20,3.36,40.0,-1.45,-41.52,5
-PCBL.NS,2.29,10.22,72.18,EMA,12/26,-8.8,20.0,-1.22,-39.99,5

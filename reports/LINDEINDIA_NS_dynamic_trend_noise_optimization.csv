@@ -1,3 +1,0 @@
-Symbol,Volatility,TrendStrength,Noise,MA_Type,MA_Pair,Return,WinRate,Sharpe,MaxDD,Trades
-LINDEINDIA.NS,1.48,0.05,99.77,SMA,12/26,-3.45,40.0,0.05,-24.97,5
-LINDEINDIA.NS,1.48,0.05,99.77,SMA,10/20,-15.26,0.0,0.06,-24.15,7

@@ -1,3 +1,0 @@
-Symbol,Volatility,TrendStrength,Noise,MA_Type,MA_Pair,Return,WinRate,Sharpe,MaxDD,Trades
-HDFCLIFE.NS,1.18,5.51,72.38,EMA,10/20,-3.68,28.57,0.92,-11.59,7
-HDFCLIFE.NS,1.18,5.51,72.38,EMA,12/26,-8.08,16.67,0.97,-10.78,6

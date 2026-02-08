@@ -1,4 +1,0 @@
-Symbol,Volatility,TrendStrength,Noise,MA_Type,MA_Pair,Return,WinRate,Sharpe,MaxDD,Trades
-POLICYBZR.NS,1.85,11.78,63.41,EMA,12/26,-5.5,40.0,-0.03,-22.81,5
-POLICYBZR.NS,1.85,11.78,63.41,EMA,20/50,-11.14,0.0,0.23,-22.81,5
-POLICYBZR.NS,1.85,11.78,63.41,EMA,10/20,-15.46,16.67,0.27,-22.81,6

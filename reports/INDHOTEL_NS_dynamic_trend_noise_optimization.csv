@@ -1,3 +1,0 @@
-Symbol,Volatility,TrendStrength,Noise,MA_Type,MA_Pair,Return,WinRate,Sharpe,MaxDD,Trades
-INDHOTEL.NS,1.48,10.79,60.27,EMA,10/20,-10.64,33.33,-0.72,-22.39,9
-INDHOTEL.NS,1.48,10.79,60.27,EMA,12/26,-12.67,0.0,-0.72,-23.51,5

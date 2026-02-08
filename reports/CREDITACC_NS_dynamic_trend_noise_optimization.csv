@@ -1,3 +1,0 @@
-Symbol,Volatility,TrendStrength,Noise,MA_Type,MA_Pair,Return,WinRate,Sharpe,MaxDD,Trades
-CREDITACC.NS,3.67,6.48,88.1,SMA,12/26,3.05,50.0,0.54,-20.75,6
-CREDITACC.NS,3.67,6.48,88.1,SMA,10/20,0.52,50.0,0.77,-20.75,6

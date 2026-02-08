@@ -1,3 +1,0 @@
-Symbol,Volatility,TrendStrength,Noise,MA_Type,MA_Pair,Return,WinRate,Sharpe,MaxDD,Trades
-MINDACORP.NS,2.46,6.53,81.25,SMA,10/20,3.16,60.0,0.13,-21.62,5
-MINDACORP.NS,2.46,6.53,81.25,SMA,12/26,-0.7,33.33,-0.04,-24.38,6

@@ -1,3 +1,0 @@
-Symbol,Volatility,TrendStrength,Noise,MA_Type,MA_Pair,Return,WinRate,Sharpe,MaxDD,Trades
-KPIL.NS,1.97,6.02,81.77,SMA,10/20,-0.35,40.0,0.32,-20.31,5
-KPIL.NS,1.97,6.02,81.77,SMA,12/26,-4.89,20.0,0.38,-20.34,5

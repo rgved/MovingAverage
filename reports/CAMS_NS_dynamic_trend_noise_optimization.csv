@@ -1,3 +1,0 @@
-Symbol,Volatility,TrendStrength,Noise,MA_Type,MA_Pair,Return,WinRate,Sharpe,MaxDD,Trades
-CAMS.NS,1.85,7.73,75.11,SMA,10/20,5.79,50.0,-0.01,-17.94,8
-CAMS.NS,1.85,7.73,75.11,SMA,12/26,-4.89,40.0,-0.09,-24.02,5

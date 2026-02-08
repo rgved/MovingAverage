@@ -1,3 +1,0 @@
-Symbol,Volatility,TrendStrength,Noise,MA_Type,MA_Pair,Return,WinRate,Sharpe,MaxDD,Trades
-SBFC.NS,3.46,15.52,67.15,EMA,10/20,1.98,57.14,0.3,-25.91,7
-SBFC.NS,3.46,15.52,67.15,EMA,12/26,-6.56,33.33,0.27,-28.3,6

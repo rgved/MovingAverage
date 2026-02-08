@@ -1,3 +1,0 @@
-Symbol,Volatility,TrendStrength,Noise,MA_Type,MA_Pair,Return,WinRate,Sharpe,MaxDD,Trades
-GRASIM.NS,1.5,2.61,89.0,SMA,10/20,-0.53,40.0,0.66,-10.65,5
-GRASIM.NS,1.5,2.61,89.0,SMA,20/50,-14.22,0.0,0.89,-10.65,5

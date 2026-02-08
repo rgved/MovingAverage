@@ -1,3 +1,0 @@
-Symbol,Volatility,TrendStrength,Noise,MA_Type,MA_Pair,Return,WinRate,Sharpe,MaxDD,Trades
-INDIGO.NS,1.92,8.14,72.08,EMA,12/26,-10.02,16.67,0.53,-25.74,6
-INDIGO.NS,1.92,8.14,72.08,EMA,10/20,-14.0,14.29,0.43,-26.77,7

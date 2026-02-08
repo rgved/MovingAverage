@@ -1,3 +1,0 @@
-Symbol,Volatility,TrendStrength,Noise,MA_Type,MA_Pair,Return,WinRate,Sharpe,MaxDD,Trades
-PTCIL.NS,1.27,0.19,98.96,SMA,10/20,11.51,80.0,0.53,-30.79,5
-PTCIL.NS,1.27,0.19,98.96,SMA,12/26,-5.52,20.0,0.72,-30.79,5

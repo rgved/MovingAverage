@@ -1,3 +1,0 @@
-Symbol,Volatility,TrendStrength,Noise,MA_Type,MA_Pair,Return,WinRate,Sharpe,MaxDD,Trades
-EMCURE.NS,2.04,1.3,95.93,SMA,10/20,-0.95,50.0,0.48,-30.85,8
-EMCURE.NS,2.04,1.3,95.93,SMA,12/26,-5.57,33.33,0.65,-31.06,6

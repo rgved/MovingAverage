@@ -1,3 +1,0 @@
-Symbol,Volatility,TrendStrength,Noise,MA_Type,MA_Pair,Return,WinRate,Sharpe,MaxDD,Trades
-DABUR.NS,0.98,4.26,72.79,SMA,12/26,-2.37,33.33,-0.18,-15.52,6
-DABUR.NS,0.98,4.26,72.79,SMA,10/20,-12.36,28.57,-0.41,-16.91,7

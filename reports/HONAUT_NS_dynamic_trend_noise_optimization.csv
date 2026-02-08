@@ -1,3 +1,0 @@
-Symbol,Volatility,TrendStrength,Noise,MA_Type,MA_Pair,Return,WinRate,Sharpe,MaxDD,Trades
-HONAUT.NS,1.84,2.1,92.93,SMA,10/20,1.57,40.0,-0.66,-26.1,5
-HONAUT.NS,1.84,2.1,92.93,SMA,12/26,-6.05,0.0,-0.26,-22.61,5

@@ -1,3 +1,0 @@
-Symbol,Volatility,TrendStrength,Noise,MA_Type,MA_Pair,Return,WinRate,Sharpe,MaxDD,Trades
-RCF.NS,1.89,8.38,73.56,EMA,12/26,-11.21,33.33,-0.32,-27.48,9
-RCF.NS,1.89,8.38,73.56,EMA,10/20,-18.55,14.29,-0.19,-27.48,7

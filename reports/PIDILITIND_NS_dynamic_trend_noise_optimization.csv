@@ -1,3 +1,0 @@
-Symbol,Volatility,TrendStrength,Noise,MA_Type,MA_Pair,Return,WinRate,Sharpe,MaxDD,Trades
-PIDILITIND.NS,1.19,6.18,65.73,EMA,10/20,-2.2,20.0,-0.34,-11.68,5
-PIDILITIND.NS,1.19,6.18,65.73,EMA,12/26,-4.79,20.0,-0.32,-10.94,5

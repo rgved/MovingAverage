@@ -1,3 +1,0 @@
-Symbol,Volatility,TrendStrength,Noise,MA_Type,MA_Pair,Return,WinRate,Sharpe,MaxDD,Trades
-EXIDEIND.NS,1.37,12.55,46.83,EMA,10/20,-15.36,22.22,-0.37,-25.9,9
-EXIDEIND.NS,1.37,12.55,46.83,EMA,12/26,-16.32,12.5,-0.61,-25.9,8

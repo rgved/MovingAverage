@@ -1,3 +1,0 @@
-Symbol,Volatility,TrendStrength,Noise,MA_Type,MA_Pair,Return,WinRate,Sharpe,MaxDD,Trades
-VOLTAS.NS,2.19,10.16,71.26,EMA,12/26,-1.84,40.0,0.04,-19.22,5
-VOLTAS.NS,2.19,10.16,71.26,EMA,10/20,-3.7,28.57,0.34,-19.22,7

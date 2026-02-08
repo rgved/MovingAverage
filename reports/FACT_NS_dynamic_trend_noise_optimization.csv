@@ -1,2 +1,0 @@
-Symbol,Volatility,TrendStrength,Noise,MA_Type,MA_Pair,Return,WinRate,Sharpe,MaxDD,Trades
-FACT.NS,2.04,12.72,63.19,EMA,10/20,-4.51,50.0,-0.17,-35.35,6

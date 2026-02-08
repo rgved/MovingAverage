@@ -1,3 +1,0 @@
-Symbol,Volatility,TrendStrength,Noise,MA_Type,MA_Pair,Return,WinRate,Sharpe,MaxDD,Trades
-TRENT.NS,2.35,16.0,51.23,EMA,10/20,-4.85,33.33,-1.07,-39.79,6
-TRENT.NS,2.35,16.0,51.23,EMA,12/26,-6.62,20.0,-0.95,-41.01,5

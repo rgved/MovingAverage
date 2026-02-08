@@ -1,3 +1,0 @@
-Symbol,Volatility,TrendStrength,Noise,MA_Type,MA_Pair,Return,WinRate,Sharpe,MaxDD,Trades
-KPITTECH.NS,2.37,13.25,59.39,EMA,12/26,-6.39,16.67,-0.81,-29.64,6
-KPITTECH.NS,2.37,13.25,59.39,EMA,10/20,-9.19,16.67,-0.83,-32.14,6

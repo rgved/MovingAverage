@@ -1,3 +1,0 @@
-Symbol,Volatility,TrendStrength,Noise,MA_Type,MA_Pair,Return,WinRate,Sharpe,MaxDD,Trades
-TATAPOWER.NS,1.71,7.73,73.21,EMA,10/20,0.5,33.33,0.01,-16.18,6
-TATAPOWER.NS,1.71,7.73,73.21,EMA,12/26,-0.19,20.0,-0.0,-15.85,5

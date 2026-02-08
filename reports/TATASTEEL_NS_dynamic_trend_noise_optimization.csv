@@ -1,3 +1,0 @@
-Symbol,Volatility,TrendStrength,Noise,MA_Type,MA_Pair,Return,WinRate,Sharpe,MaxDD,Trades
-TATASTEEL.NS,2.39,1.5,96.0,SMA,10/20,24.76,85.71,1.21,-20.03,7
-TATASTEEL.NS,2.39,1.5,96.0,SMA,12/26,15.39,80.0,1.48,-20.03,5
