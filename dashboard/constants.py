@@ -54,3 +54,12 @@ FNO_STOCKS = [
     "TATAELXSI", "HUDCO", "YESBANK", "CASTROLIND", "GLAND", "NBCC", "PHOENIXLTD",
     "SOLARINDS", "TORNTPOWER"
 ]
+
+INDICES = [
+    "Nifty 50", "Nifty 100", "Nifty 500", "Nifty Alpha 50", "Nifty Auto",
+    "Nifty Bank", "Nifty Commodities", "Nifty FMCG", "Nifty Healthcare",
+    "Nifty IT", "Nifty Metal", "Nifty Midcap 100", "Nifty Midcap 150",
+    "Nifty Midcap 50", "Nifty MNC", "Nifty Next 50", "Nifty Pharma",
+    "Nifty PSE", "Nifty PSU Bank", "Nifty Realty", "Nifty200 Alpha 30",
+    "Nifty200 Value 30", "Nifty50 Shariah", "Nifty50 Value 20"
+]

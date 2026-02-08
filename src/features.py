@@ -13,12 +13,12 @@ PROCESSED_DATA_DIR = os.path.join(PROJECT_ROOT, "data", "processed")
 
 # ---------- IMPORTS ----------
 try:
-    from constants import FNO_STOCKS
+    from constants import FNO_STOCKS, INDICES
 except ImportError:
     # Fallback to local path if running directly in src
     import sys
     sys.path.append(SRC_DIR)
-    from constants import FNO_STOCKS
+    from constants import FNO_STOCKS, INDICES
 
 # ---------- Moving Averages ----------
 def compute_sma(df, column="Close", window=20):
@@ -83,9 +83,10 @@ def process_all(data_dir=RAW_DATA_DIR,
             symbol = file.replace(".csv", "") # Assumes filename is symbol.csv
             base_symbol = symbol.split(".")[0] # Remove .NS or similar extensions if present for check, or assume FNO_STOCKS has clean names
             
-            # F&O Filter
-            if base_symbol not in FNO_STOCKS:
-                print(f"Skipping {file} (Not F&O)")
+            # F&O and Indices Filter
+            # Check if it's F&O (base_symbol) OR an Index (full symbol)
+            if (base_symbol not in FNO_STOCKS) and (symbol not in INDICES):
+                print(f"Skipping {file} (Not F&O/Index)")
                 continue
 
             path = os.path.join(data_dir, file)

@@ -61,11 +61,11 @@ def select_ma_type(vol, trend, noise, trend_threshold=0.045):
         return "SMA"
 
 # ---------- Dynamic Optimizer ----------
-def optimize_dynamic_trend_noise(symbol, ma_pairs=None):
+def optimize_dynamic_trend_noise(symbol, ma_pairs=None, years=1):
     if ma_pairs is None:
         ma_pairs = [(10, 20), (12, 26), (20, 50), (50, 100), (50, 200)]
 
-    print(f"\n Running optimization for {symbol}")
+    print(f"\n Running optimization for {symbol} ({years}Y)")
 
     file_path = os.path.join(DATA_DIR, f"{symbol}.csv")
     if not os.path.exists(file_path):
@@ -74,12 +74,12 @@ def optimize_dynamic_trend_noise(symbol, ma_pairs=None):
     df = pd.read_csv(file_path)
     df["Date"] = pd.to_datetime(df["Date"])
 
-    # Use 12 months (1 year) data for more robust optimization
-    start_date = df["Date"].max() - pd.DateOffset(months=12)
+    # Use X years of data
+    start_date = df["Date"].max() - pd.DateOffset(years=years)
     df_recent = df[df["Date"] >= start_date]
 
     if len(df_recent) < 100:
-        print(f"Skipping {symbol}: Not enough data (<100 rows in last year)")
+        print(f"Skipping {symbol}: Not enough data (<100 rows in last {years} years)")
         return pd.DataFrame()
 
     vol = compute_volatility(df_recent)
@@ -109,30 +109,33 @@ def optimize_dynamic_trend_noise(symbol, ma_pairs=None):
 
         results.append({
             "symbol": symbol,
-            "volatility": round(vol * 100, 2),
+            "MarketSigma": round(vol * 100, 2), # Renamed for clarity
             "trend_strength": round(trend * 100, 2),
             "noise": round(noise * 100, 2),
-            "ma_type": ma_type,
-            "ma_pair": f"{fast}/{slow}",
-            "total_return": metrics["total_return"] * 100,
-            "win_rate": metrics["win_rate"],
-            "sharpe_ratio": metrics["sharpe"],
-            "max_drawdown": metrics["max_drawdown"] * 100,
-            "num_trades": metrics["trades"]
+            "MA_Type": ma_type,
+            "MA_Pair": f"{fast}/{slow}",
+            "Return": metrics["total_return"] * 100,
+            "StrategyAggr": metrics["volatility"] * 100, # Renamed from Volatility to avoid confusion
+            "WinRate": metrics["win_rate"],
+            "Sharpe": metrics["sharpe"],
+            "MaxDrawdown": metrics["max_drawdown"] * 100,
+            "Trades": metrics["trades"]
         })
 
     # Sort by Return desc
-    results_df = pd.DataFrame(results).sort_values("total_return", ascending=False)
+    results_df = pd.DataFrame(results).sort_values("Return", ascending=False)
     
     # Filter for robustness: Prefer strategies with at least 5 trades
+    # For longer timeframes, maybe adjust? For now keep 5.
     robust_df = results_df[results_df["Trades"] >= 5]
     
     if not robust_df.empty:
         results_df = robust_df
 
+    # Filename now includes years
     out_path = os.path.join(
         REPORTS_DIR,
-        f"{symbol.replace('.', '_')}_dynamic_trend_noise_optimization.csv"
+        f"{symbol.replace('.', '_')}_{years}y_dynamic_trend_noise_optimization.csv"
     )
     results_df.to_csv(out_path, index=False)
 
@@ -141,22 +144,27 @@ def optimize_dynamic_trend_noise(symbol, ma_pairs=None):
 
 # ---------- Batch Runner ----------
 def run_all_dynamic_trend_noise(symbols):
-    best = []
+    # Loop for each lookback period (Prioritize 3Y as it's the default view)
+    for years in [3, 1, 2]:
+        print(f"\n=== STARTING OPTIMIZATION FOR {years} YEAR(S) ===")
+        best = []
+        for sym in symbols:
+            try:
+                res = optimize_dynamic_trend_noise(sym, years=years)
+                if not res.empty:
+                    best.append(res.head(1))
+            except Exception as e:
+                print(f"! {sym}: {e}")
 
-    for sym in symbols:
-        try:
-            res = optimize_dynamic_trend_noise(sym)
-            best.append(res.head(1))
-        except Exception as e:
-            print(f"! {sym}: {e}")
+        if best:
+            final = pd.concat(best, ignore_index=True)
+            final.to_csv(
+                os.path.join(REPORTS_DIR, f"best_{years}y_dynamic_trend_noise_summary.csv"),
+                index=False
+            )
+            print(f"\n Final summary for {years}Y saved")
 
-    if best:
-        final = pd.concat(best, ignore_index=True)
-        final.to_csv(
-            os.path.join(REPORTS_DIR, "best_dynamic_trend_noise_summary.csv"),
-            index=False
-        )
-        print("\n Final summary saved")
+from constants import INDICES
 
 if __name__ == "__main__":
     symbols = [
@@ -749,4 +757,5 @@ if __name__ == "__main__":
     "ZYDUSLIFE.NS",
     "ECLERX.NS"
     ]
+    symbols.extend(INDICES)
     run_all_dynamic_trend_noise(symbols)

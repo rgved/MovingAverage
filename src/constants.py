@@ -49,3 +49,42 @@ FNO_STOCKS = [
     "TATAELXSI", "HUDCO", "YESBANK", "CASTROLIND", "GLAND", "NBCC", "PHOENIXLTD",
     "SOLARINDS", "TORNTPOWER"
 ]
+
+INDICES = [
+    "Nifty 50", "Nifty 100", "Nifty 500", "Nifty Alpha 50", "Nifty Auto",
+    "Nifty Bank", "Nifty Commodities", "Nifty FMCG", "Nifty Healthcare",
+    "Nifty IT", "Nifty Metal", "Nifty Midcap 100", "Nifty Midcap 150",
+    "Nifty Midcap 50", "Nifty MNC", "Nifty Next 50", "Nifty Pharma",
+    "Nifty PSE", "Nifty PSU Bank", "Nifty Realty", "Nifty200 Alpha 30",
+    "Nifty200 Value 30", "Nifty50 Shariah", "Nifty50 Value 20"
+]
+
+import os
+import pandas as pd
+
+def load_custom_universe(file_path):
+    """Loads symbols from a CSV file."""
+    try:
+        if not os.path.exists(file_path):
+            return []
+        
+        df = pd.read_csv(file_path)
+        # Look for SYMBOL column (case insensitive)
+        col_map = {c.upper(): c for c in df.columns}
+        if "SYMBOL" in col_map:
+            symbols = df[col_map["SYMBOL"]].dropna().unique().tolist()
+            # Clean symbols and add .NS if missing (assuming NSE)
+            # But upstox might need specific format. 
+            # The existing code appends .NS in fetch-data-upstox.py Line 45: f"{symbol}.NS"
+            # So here we just return the raw symbols like "RELIANCE".
+            return [str(s).strip() for s in symbols]
+        else:
+            return []
+    except Exception as e:
+        print(f"Error loading custom universe: {e}")
+        return []
+
+# Dynamic load
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+NSE_ALL_FILE = os.path.join(BASE_DIR, "all_nse_stocks.csv")
+ALL_NSE_SYMBOLS = load_custom_universe(NSE_ALL_FILE)

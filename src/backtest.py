@@ -8,12 +8,17 @@ def max_drawdown(equity):
     drawdown = (equity / peak) - 1
     return drawdown.min()
 
-def sharpe_ratio(daily_returns, periods_per_year=252):
+def sharpe_ratio(daily_returns, risk_free_rate=0.067, periods_per_year=252):
     mean = daily_returns.mean()
     std = daily_returns.std()
     if std == 0 or np.isnan(std):
         return 0.0
-    return (mean / std) * np.sqrt(periods_per_year)
+    
+    # annualized_return = mean * periods_per_year
+    # annualized_volatility = std * np.sqrt(periods_per_year)
+    # return (annualized_return - risk_free_rate) / annualized_volatility
+    
+    return (mean * periods_per_year - risk_free_rate) / (std * np.sqrt(periods_per_year))
 
 # ---------- Backtest Function ----------
 
@@ -103,11 +108,14 @@ def backtest_strategy(
 
     equity_series = pd.Series(equity)
     daily_returns = equity_series.pct_change().fillna(0)
+    
+    annualized_volatility = daily_returns.std() * np.sqrt(252)
 
     metrics = {
         "total_return": total_return,   # fraction
         "max_drawdown": max_drawdown(equity_series),
-        "sharpe": sharpe_ratio(daily_returns),
+        "sharpe": sharpe_ratio(daily_returns, risk_free_rate=0.067),
+        "volatility": annualized_volatility,
         "win_rate": win_rate,           # fraction
         "wins": wins,
         "losses": losses,
