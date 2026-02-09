@@ -34,8 +34,11 @@ st.set_page_config(page_title="Adaptive MA Strategy Dashboard", layout="wide")
 st.title("Adaptive Moving Average Strategy Dashboard")
 
 if not os.path.exists(reports_dir):
-    st.error(f"Reports directory not found: {reports_dir}")
-    st.stop()
+    os.makedirs(reports_dir, exist_ok=True)
+    st.warning(
+        f"Reports directory was missing and has been created: {reports_dir}. "
+        "Run the pipeline to generate reports."
+    )
 
 # ---------- SIDEBAR CONFIGURATION ----------
 st.sidebar.title("Configuration")
@@ -341,6 +344,11 @@ for file in os.listdir(reports_dir):
             "Strategy Vol": round(best.get("StrategyAggr", best.get("Volatility", 0)), 2),
             "Trades": trades
         })
+
+if not rows:
+    st.info(
+        "No report files found yet. Run the data pipeline from the sidebar to generate reports."
+    )
 
 # Compute crossovers (ALWAYS calc for sorting)
 with st.spinner("Calculating crossovers..."):
