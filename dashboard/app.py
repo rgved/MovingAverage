@@ -395,7 +395,7 @@ with col2:
     fast_ma = st.selectbox("Fast MA (MA1)", [5, 10, 12, 20, 50, 100])
 
 with col3:
-    slow_ma = st.selectbox("Slow MA (MA2)", [20, 50, 100, 200])
+    slow_ma = st.selectbox("Slow MA (MA2)", [20, 26, 50, 100, 200])
 
 # ---------- VALIDATION ----------
 if fast_ma >= slow_ma:
@@ -522,15 +522,38 @@ if has_selection:
         df.reset_index(inplace=True)
 
     # ---------- APPLY SCENARIO MOVING AVERAGES ----------
-    if scenario_ma_type == "EMA":
-        df["MA_Fast"] = df["Close"].ewm(span=fast_ma, adjust=False).mean()
-        df["MA_Slow"] = df["Close"].ewm(span=slow_ma, adjust=False).mean()
+    # ---------- PARSE SELECTED STRATEGY ----------
+    if isinstance(selected_rows, pd.DataFrame):
+        best_ma_type = selected_rows.iloc[0]["Best MA Type"]
+        best_ma_pair = selected_rows.iloc[0]["Best MA Pair"]
     else:
-        df["MA_Fast"] = df["Close"].rolling(fast_ma).mean()
-        df["MA_Slow"] = df["Close"].rolling(slow_ma).mean()
+        best_ma_type = selected_rows[0]["Best MA Type"]
+        best_ma_pair = selected_rows[0]["Best MA Pair"]
+
+    # Parse Pair (e.g. "10/26")
+    try:
+        fast_viz, slow_viz = map(int, best_ma_pair.split("/"))
+        ma_type_viz = best_ma_type
+    except:
+        # Fallback to sidebar if parsing fails
+        fast_viz, slow_viz = fast_ma, slow_ma
+        ma_type_viz = scenario_ma_type
+
+    # ---------- APPLY SELECTED MOVING AVERAGES ----------
+    if ma_type_viz == "EMA":
+        df["MA_Fast"] = df["Close"].ewm(span=fast_viz, adjust=False).mean()
+        df["MA_Slow"] = df["Close"].ewm(span=slow_viz, adjust=False).mean()
+    else:
+        df["MA_Fast"] = df["Close"].rolling(fast_viz).mean()
+        df["MA_Slow"] = df["Close"].rolling(slow_viz).mean()
 
     df["Signal"] = np.where(df["MA_Fast"] > df["MA_Slow"], 1, -1)
     df["Crossover"] = df["Signal"].diff()
+
+    # Update variables for title later
+    scenario_ma_type = ma_type_viz 
+    fast_ma = fast_viz
+    slow_ma = slow_viz
 
     # REVISION: Slice to last 3 months for Visualization Only
     # Data has full history here, so MAs and Signals are accurate.
@@ -581,11 +604,10 @@ if has_selection:
     sell_indices = df.index[df["Crossover"] == -2].to_numpy()
 
     # Shift left (i - 1), ensuring we don't go below 0
-    buy_indices_shifted = buy_indices - 1
-    buy_indices_shifted = buy_indices_shifted[buy_indices_shifted >= 0]
+    # REVISION: Removed shift to align with table date (User Request)
+    buy_indices_shifted = buy_indices 
     
-    sell_indices_shifted = sell_indices - 1
-    sell_indices_shifted = sell_indices_shifted[sell_indices_shifted >= 0]
+    sell_indices_shifted = sell_indices
 
     buys = df.iloc[buy_indices_shifted].copy()
     sells = df.iloc[sell_indices_shifted].copy()
