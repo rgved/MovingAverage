@@ -383,32 +383,18 @@ if not summary_df.empty:
     summary_df = summary_df.reset_index(drop=True)
 
 
-# ---------- SCENARIO CONTROLS (WHAT-IF MODE) ----------
-st.markdown("### 🔎 Scenario Analysis (What-If MA Strategy)")
-
-col1, col2, col3 = st.columns(3)
-
-with col1:
-    scenario_ma_type = st.selectbox("MA Type", ["EMA", "SMA"])
-
-with col2:
-    fast_ma = st.selectbox("Fast MA (MA1)", [5, 10, 12, 20, 50, 100])
-
-with col3:
-    slow_ma = st.selectbox("Slow MA (MA2)", [20, 26, 50, 100, 200])
-
-# ---------- VALIDATION ----------
-if fast_ma >= slow_ma:
-    st.warning("Fast MA must be smaller than Slow MA")
-    st.stop()
-
-st.caption(
-    f"📌 Showing *what-if scenario* for **{scenario_ma_type} {fast_ma}/{slow_ma}** "
-    f"on **{timeframe}** data (independent of historical optimization)"
-)
 
 # ---------- TABLE ----------
 st.subheader("📊 Stock Performance Summary (Best Historical Strategy)")
+
+if not summary_df.empty:
+    csv = summary_df.to_csv(index=False).encode('utf-8')
+    st.download_button(
+        label=f"Download {universe} Data as CSV",
+        data=csv,
+        file_name=f"{universe.replace(' ', '_').lower()}_strategy_summary.csv",
+        mime="text/csv",
+    )
 
 gb = GridOptionsBuilder.from_dataframe(summary_df)
 gb.configure_selection(selection_mode="single", use_checkbox=False)
@@ -454,7 +440,39 @@ if has_selection:
     selected_symbol = display_symbol.replace(" *", "")
 
     st.markdown("---")
-    st.subheader(f"📈 Price Chart ({timeframe}) + Scenario MA Overlay")
+    st.subheader(f"📈 Price Chart ({timeframe})")
+    
+    # ---------- SCENARIO CONTROLS (WHAT-IF MODE) ----------
+    st.markdown("### 🔎 Strategy to Display")
+    strategy_mode = st.radio("Mode", ["Optimized (Best Historical)", "Custom Scenario"], horizontal=True, label_visibility="collapsed")
+    
+    if strategy_mode == "Custom Scenario":
+        sc1, sc2, sc3 = st.columns(3)
+        with sc1:
+            ma_type_viz = st.selectbox("MA Type", ["EMA", "SMA"], index=0)
+        with sc2:
+            fast_viz = st.selectbox("Fast MA", options=[5, 10, 12, 20, 50, 100], index=2)
+        with sc3:
+            slow_viz = st.selectbox("Slow MA", options=[20, 26, 50, 100, 200], index=1)
+        
+        if fast_viz >= slow_viz:
+            st.warning("Fast MA must be smaller than Slow MA")
+            st.stop()
+    else:
+        if isinstance(selected_rows, pd.DataFrame):
+            best_ma_type = selected_rows.iloc[0]["Best MA Type"]
+            best_ma_pair = selected_rows.iloc[0]["Best MA Pair"]
+        else:
+            best_ma_type = selected_rows[0]["Best MA Type"]
+            best_ma_pair = selected_rows[0]["Best MA Pair"]
+        
+        try:
+            fast_viz, slow_viz = map(int, best_ma_pair.split("/"))
+            ma_type_viz = best_ma_type
+        except:
+            fast_viz, slow_viz = 12, 26
+            ma_type_viz = "EMA"
+
     
     # Use full processed data for plotting to match optimization scope
     full_data_dir = os.path.join(BASE_DIR, "data", "processed")
@@ -520,24 +538,6 @@ if has_selection:
         df = df.resample("W").agg({"Open": "first", "High": "max", "Low": "min", "Close": "last", "Volume": "sum"})
         df.dropna(inplace=True)
         df.reset_index(inplace=True)
-
-    # ---------- APPLY SCENARIO MOVING AVERAGES ----------
-    # ---------- PARSE SELECTED STRATEGY ----------
-    if isinstance(selected_rows, pd.DataFrame):
-        best_ma_type = selected_rows.iloc[0]["Best MA Type"]
-        best_ma_pair = selected_rows.iloc[0]["Best MA Pair"]
-    else:
-        best_ma_type = selected_rows[0]["Best MA Type"]
-        best_ma_pair = selected_rows[0]["Best MA Pair"]
-
-    # Parse Pair (e.g. "10/26")
-    try:
-        fast_viz, slow_viz = map(int, best_ma_pair.split("/"))
-        ma_type_viz = best_ma_type
-    except:
-        # Fallback to sidebar if parsing fails
-        fast_viz, slow_viz = fast_ma, slow_ma
-        ma_type_viz = scenario_ma_type
 
     # ---------- APPLY SELECTED MOVING AVERAGES ----------
     if ma_type_viz == "EMA":

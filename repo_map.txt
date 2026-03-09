@@ -1,0 +1,253 @@
+SECTION 1: PROJECT OVERVIEW
+
+Purpose of Application:
+The application is an Adaptive Moving Average Strategy tool designed for finance and trading analysis. It simulates stock trading based on moving average (MA) crossover strategies and dynamically switches between Simple Moving Average (SMA) and Exponential Moving Average (EMA) to adapt to different market regimes.
+
+Problem it Solves:
+Moving average strategies often fail in sideways (choppy) markets and lag during strong trends. This system solves that by computing Volatility, Trend Strength, and Market Noise explicitly to determine which type of moving average fits the current stock's personality best—reducing false signals.
+
+Main Functionality:
+1. Automated fetching of historical price data (ohlcv) from the Upstox API or Yahoo Finance.
+2. Standardized feature extraction to populate dataframes with SMA, EMA, and crossover signals.
+3. An optimization engine that evaluates thousands of fast/slow moving average combinations against past real-world data across various stock tickers.
+4. Calculation of core financial metrics including Total Return, Win Rate, Sharpe Ratio, and Maximum Drawdown.
+5. An interactive Streamlit dashboard that ranks the most optimal historical strategies globally and allows users to run "Custom Scenarios" on a beautifully rendered visual chart.
+
+High-Level Architecture:
+It is structured as a pipeline with UI wrapper:
+- Data Layer: Extracting from via HTTP API, dumping as raw CSV, appending features (Processed CSVs), then trimming to bounds (Trimmed CSVs).
+- Business Logic Layer: Independent optimizers iterate over timeframes making choices, feeding data to a generic backtester.
+- Presentation Layer: A single Streamlit application parsing output "reports".
+
+Technologies Used:
+Python locally, Pandas/NumPy for dataframe heavy-lifting, Plotly/Matplotlib for charting, Streamlit for UI wrappers, Requests for HTTP downloading.
+
+Data Flow through the System:
+User triggers pipeline from Dashboard
+↓
+Upstox API → fetch-data-upstox.py
+↓
+data/raw/*.csv
+↓
+features.py → appends computed signals
+↓
+data/processed/*.csv
+↓
+trim_data.py → scopes data bounds
+↓
+data/trimmed/*.csv
+↓
+optimize_on_dynamic_noise.py → calculates Vol/Trend/Noise, loops backtesting
+↓
+reports/*.csv
+↓
+dashboard/app.py → UI Presentation
+
+---
+
+SECTION 2: DIRECTORY STRUCTURE
+
+MOVINGAVERAGE/
+├── dashboard/
+│   ├── app.py
+│   └── constants.py
+├── data/
+│   ├── processed/
+│   ├── raw/
+│   └── trimmed/
+├── reports/
+├── src/
+│   ├── backtest.py
+│   ├── constants.py
+│   ├── features.py
+│   ├── fetch-data-upstox.py
+│   ├── fetch-data-yf.py
+│   ├── optimize_all.py
+│   ├── optimize_ma.py
+│   ├── optimize_ma_pairs.py
+│   ├── optimize_on_dynamic.py
+│   ├── optimize_on_dynamic_noise.py
+│   ├── optimize_on_volatility.py
+│   ├── trim_data.py
+│   ├── update_instrument_keys.py
+│   └── verify_implementation.py
+├── .env
+├── .env.example
+├── .gitignore
+├── all_nse_stocks.csv
+├── find_indices.py
+├── generate_upstox_symbol.py
+├── optimize_indices.py
+├── plot.py
+├── README.md
+├── requirements.txt
+├── upstox_symbol_map.json
+└── verify_dashboard_logic.py
+
+---
+
+SECTION 3: FILE PURPOSES
+
+FILE: dashboard/app.py
+Purpose: The main user interface application built with Streamlit to display trading charts, metrics, and parameters.
+Key Components:
+- calculate_crossovers(stock_list, tf, years) [Function]
+  - Parameters: stock list (list), timeframe (str), lookback years (int)
+  - Return Values: Dictionary mapping symbols to latest bullish crossover dates and recent trade counts.
+  - Responsibility: Recalculates MAs natively specifically to show recent crossover history independently of the backtester.
+- run_script(script_name, status_text) [Function]
+  - Parameters: script filename, Streamlit UI text block.
+  - Return Values: None (Void execution)
+  - Responsibility: Allows users to run Python backends via subprocesses gracefully without leaving the Streamlit UI.
+
+FILE: src/backtest.py
+Purpose: Decoupled trading simulator to evaluate performance of an indicator strategy dataframe.
+Key Components:
+- max_drawdown(equity) [Function]
+  - Parameters: equity curve (Pandas Series)
+  - Return Values: Global minimum percentage drawdown (float).
+  - Responsibility: Provide risk analysis on simulated equity curves.
+- sharpe_ratio(daily_returns, risk_free_rate, periods_per_year) [Function]
+  - Parameters: Returns array, safe investment rate, trading days multiplier.
+  - Return Values: Annualized Sharpe value (float).
+  - Responsibility: Measure risk-adjusted performance of the signals.
+- backtest_strategy(df, entry_col, cost_bps, exit_mode, hold_days, stop_loss, take_profit) [Function]
+  - Parameters: OHLC DataFrame, signal column name, spread/slippage costs, exit strategy settings.
+  - Return Values: metrics (Dict), trades (List of dicts).
+  - Responsibility: Scans chronologically row by row, tracking simulated entry/exit prices based on the indicator variables passed to it. Primary engine of the system.
+
+FILE: src/features.py
+Purpose: Data manipulation script to add standard technical analysis columns to plain OHLC data.
+Key Components:
+- compute_sma, compute_ema, compute_wma [Functions]
+  - Parameters: dataframe, target column, lookback window
+  - Return Values: Column of calculated averages (Pandas Series)
+  - Responsibility: Mathematical computation of trend-lines.
+- generate_signals(df) [Function]
+  - Parameters: Dataframe containing MAs
+  - Return Values: Dataframe with 'Signal' (+1/-1) and 'Crossover' fields.
+  - Responsibility: To reduce continuous MA lines into categorical trading flags used by the backtest engine.
+
+FILE: src/optimize_on_dynamic_noise.py
+Purpose: The main optimization logic that assigns optimal moving average parameters to each individual stock ticker based on its historical personality.
+Key Components:
+- compute_volatility, compute_trend_strength, compute_noise_ratio [Functions]
+  - Parameters: Price DataFrame, lookback window.
+  - Return Values: Output percentage metrics (float).
+  - Responsibility: Determine the specific market regime (volatile vs steady, trending vs sideways) of the instrument.
+- select_ma_type(vol, trend, noise) [Function]
+  - Parameters: Computed stringency parameters.
+  - Return Values: String 'SMA' or 'EMA'.
+  - Responsibility: Employs a fixed rule-set to select what formulation of MA works best for the current noise ratio.
+- optimize_dynamic_trend_noise(symbol, ma_pairs, years) [Function]
+  - Parameters: Asset Ticker (Str), Options block to test (List of Tuples), analysis length (Int).
+  - Return Values: Summarized performance DataFrame.
+  - Responsibility: Executes backtest permutations and saves the most profitable setup configurations against the given asset.
+
+FILE: src/fetch-data-upstox.py
+Purpose: Fetches external price histories to bootstrap the dataset.
+Key Components:
+- fetch_history(symbol, instrument_key, days) [Function]
+  - Parameters: Symbol Str, Upstox API native Key, required backwards tracking length.
+  - Return Values: None. Writes direct to CSV.
+  - Responsibility: Securely hits external Upstox APIs to populate raw data required to run analysis reliably locally.
+
+FILE: src/constants.py
+Purpose: Manages lists of ticker symbols globally imported by other analysis files.
+Key Components:
+- load_custom_universe(file_path) [Function]
+  - Parameters: CSV file string path.
+  - Return Values: List of cleaned unique string tickers.
+  - Responsibility: To allow dynamic universe injection (such as parsing `all_nse_stocks.csv`) without manual hardcoding.
+
+FILE: src/update_instrument_keys.py
+Purpose: Automates retrieval of required backend ID mappings used by the API provider.
+Key Components:
+- update_symbol_map() [Function]
+  - Parameters: None
+  - Return Values: A Map Dictionary (also implicitly outputs upstox_symbol_map.json).
+  - Responsibility: Periodically updates API mappings (tradingsymbol to instrument_key mapping object) fetching raw dumps from upstox URLs directly.
+
+---
+
+SECTION 4: DATA FLOW
+
+[System Configuration]:
+Users execute Upstox Key Update → JSON Mapping stored.
+
+[Pipeline execution]:
+1. User clicks "Update Data & Run Optimization" in UI sidebar
+↓
+2. `fetch-data-upstox.py` reads Mapping, calls External APIs, and stages plain OHLC columns to `data/raw/` CSV.
+↓
+3. `features.py` parses Raw CSV, attaches SMA, EMA strings + boolean `Signal`/`Crossover` state flags to `data/processed/`.
+↓
+4. `trim_data.py` truncates the files in `data/processed/` chronologically and stages them down to rolling 3-month segments in `data/trimmed/`.
+↓
+5. `optimize_on_dynamic_noise.py` evaluates all processed stocks. It executes simulated loops via `backtest.py` across multiple config tuples. The winning configurations export globally to `reports/*.csv`.
+↓
+6. `dashboard/app.py` renders the output. Selecting a stock row on the table queries the respective CSV to plot interactive lines using Plotly locally against the real dataset.
+
+---
+
+SECTION 5: ENTRY POINTS
+
+1. `dashboard/app.py`
+Execution begins sequentially starting top-to-bottom as a standard Streamlit script (e.g. `streamlit run dashboard/app.py`). UI event loops trigger data-reloading and button states. Primary user entry.
+
+2. `src/optimize_on_dynamic_noise.py`
+Execution begins natively through basic python via the bottom bounds initialization (`if __name__ == "__main__":`). This triggers an array iteration of stock tickers pulling from src.constants. Acts as an orchestration entry point.
+
+3. `src/fetch-data-upstox.py`
+Can act as a standalone entry point internally hitting upstream APIs via iterating `.items()` loaded natively from the root JSON files upon the `main` declaration executing.
+
+---
+
+SECTION 6: DEPENDENCIES
+
+Extracted largely from `requirements.txt`:
+
+1. `pandas` / `numpy` : Required for heavy dataframe, math, moving average arrays, and vector manipulation. Core dependencies across almost every file.
+2. `streamlit` / `streamlit_aggrid` : Used to create the frontend UI components and the custom reactive interactive grids that present metrics to users seamlessly.
+3. `plotly` / `matplotlib` : Data visualization dependencies forming the backend of the charting functionalities inside Streamlit screens.
+4. `requests` : Lightweight framework allowing synchronous API GET requests from generic web endpoints (Upstox).
+5. `python-dotenv` : Security library used universally to import hidden OS variables (Access Tokens) without hardcoding credentials into source files.
+
+---
+
+SECTION 7: INTEGRATION NOTES
+
+- Producing Modules: `fetch-data-upstox.py` (Outputs Price Columns). `features.py` (Outputs Mathematics and Logical Signal Columns). `optimize_on_dynamic_noise.py` (Outputs summarized Metric Dataframes). 
+- Consuming Modules: Everything funnels implicitly right. `backtest.py` consumes all generated data signals from the optimizers to grade them. `app.py` UI consumes both raw dataframes (for plotting charts) and optimization summaries (for plotting tables).
+- Resusability: `backtest.py` acts as a pure mathematical component. It can be easily upended and transported to any other algorithmic trading application simply by feeding it standard `Date/Open/High/Low/Close/Signal` arrays. Additionally, `features.py/add_moving_averages()` functions act purely statelessly on passed structures making it an easy drop-in inclusion to secondary machine-learning data manipulation models.
+
+---
+SECTION 8: CALL GRAPH
+
+System Call Graph & Responsibilities:
+
+User
+ ├──> UI Presentation (dashboard/app.py)
+ │     ├──> [Renders] AGGrid interactive Table
+ │     ├──> [Renders] Plotly Signals UI
+ │     └──> [Calls Data Updates] via python subprocess
+ │
+ ├──> subprocess run -> Data Fetch (src/fetch-data-upstox.py)
+ │     ├──> Maps via -> (src/update_instrument_keys.py JSON)
+ │     └──> Outputs -> data/raw/
+ │
+ ├──> subprocess run -> Feature Injection (src/features.py)
+ │     ├──> Requires -> data/raw/
+ │     └──> Outputs -> data/processed/
+ │
+ ├──> subprocess run -> Data Formatting (src/trim_data.py)
+ │     ├──> Requires -> data/processed/
+ │     └──> Outputs -> data/trimmed/
+ │
+ └──> subprocess run -> Grid Search (src/optimize_on_dynamic_noise.py)
+       ├──> Iterates over configurations -> (src/backtest.py)
+       ├──> Calculates Metrics -> (backtest.py functions)
+       ├──> Compiles rankings
+       └──> Outputs -> reports/*.csv
+
+This structure highlights clean decoupling wherein analysis mechanisms (optimization/backtesting) run independently from presentation (Streamlit UI), connected implicitly by CSV filesystem transfers.
