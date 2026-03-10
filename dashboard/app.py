@@ -320,13 +320,13 @@ def build_download_csv(stock_list, tf):
 
     if download_df.empty:
 
-    download_df = pd.DataFrame([
-        {
-            "Date": pd.to_datetime(day),
-            **vals,
-        }
-        for day, vals in counts_by_date.items()
-    ])
+        download_df = pd.DataFrame([
+            {
+                "Date": pd.to_datetime(day),
+                **vals,
+            }
+            for day, vals in counts_by_date.items()
+        ])
 
     if download_df.empty:
 
