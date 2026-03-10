@@ -278,8 +278,7 @@ def build_download_csv(stock_list, tf):
 
     # ---------- ADD NIFTY CLOSE ----------
 
-    download_df["NIFTY*"] = np.nan
-
+    nifty_found = False
     nifty_candidates = ["Nifty 50", "NIFTY 50", "NIFTY"]
 
     for nifty_symbol in nifty_candidates:
@@ -309,11 +308,14 @@ def build_download_csv(stock_list, tf):
                 )
 
             download_df = download_df.merge(nifty_df, on="Date", how="left")
-
+            nifty_found = True
             break
 
         except Exception:
             continue
+
+    if not nifty_found:
+        download_df["NIFTY*"] = np.nan
 
     ordered_cols = ["Date", *ma_pairs.keys(), "NIFTY*"]
 

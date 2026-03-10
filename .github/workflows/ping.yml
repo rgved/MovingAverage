@@ -1,0 +1,17 @@
+name: Keep Streamlit Alive
+
+on:
+  schedule:
+    - cron: "*/30 * * * *"
+  workflow_dispatch:
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Ping Streamlit
+        run: |
+          echo "Pinging Streamlit app..."
+          curl -I https://your-streamlit-app-url.streamlit.app
+          echo "Ping complete"
