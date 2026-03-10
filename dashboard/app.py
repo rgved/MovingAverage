@@ -650,9 +650,9 @@ if generate_btn:
         
     st.success("CSV Ready For Download!")
     st.download_button(
-        label=f"Download {universe} Data as CSV",
+        label="Download All Universes Data as CSV",
         data=csv_bytes,
-        file_name=f"{universe.replace(' ', '_').lower()}_custom_summary.csv",
+        file_name="all_nse_custom_summary.csv",
         mime="text/csv",
     )
 selected_rows = grid_response.get("selected_rows", None)
