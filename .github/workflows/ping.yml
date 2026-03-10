@@ -13,5 +13,5 @@ jobs:
       - name: Ping Streamlit
         run: |
           echo "Pinging Streamlit app..."
-          curl -I https://your-streamlit-app-url.streamlit.app
+          curl -I https://movingaverage-acfyvpukzjjmajw9pjwwef.streamlit.app/
           echo "Ping complete"
