@@ -192,6 +192,100 @@ def calculate_crossovers(stock_list, tf, years):
     return crossover_data
 
 
+@st.cache_data
+def build_download_csv(stock_list, tf):
+    """Build a market-breadth style export with fixed user-requested columns."""
+    full_data_dir = os.path.join(BASE_DIR, "data", "processed")
+    ma_pairs = {
+        "Bullish_20/50": (20, 50),
+        "Bullish_12/26": (12, 26),
+        "Bullish_50/100": (50, 100),
+        "Bullish_50/200": (50, 200),
+        "Bearish_20/5": (20, 5),
+        "Bearish_12/26": (12, 26),
+        "Bearish_50/100": (50, 100),
+        "Bearish_50/200": (50, 200),
+    }
+
+    counts_by_date = {}
+
+    for symbol in stock_list:
+        price_file = os.path.join(full_data_dir, f"{symbol}.csv")
+        if not os.path.exists(price_file):
+            continue
+
+        try:
+            df = pd.read_csv(price_file)
+            df["Date"] = pd.to_datetime(df["Date"], utc=True, errors="coerce").dt.tz_convert(None)
+            df = df.sort_values("Date")
+
+            if tf == "Weekly":
+                df = (
+                    df.set_index("Date")
+                    .resample("W")
+                    .agg({"Open": "first", "High": "max", "Low": "min", "Close": "last", "Volume": "sum"})
+                    .dropna()
+                    .reset_index()
+                )
+
+            for col_name, (fast, slow) in ma_pairs.items():
+                fast_ema = df["Close"].ewm(span=fast, adjust=False).mean()
+                slow_ema = df["Close"].ewm(span=slow, adjust=False).mean()
+                signal = (fast_ema > slow_ema) if col_name.startswith("Bullish") else (fast_ema <= slow_ema)
+
+                for dt, is_true in zip(df["Date"], signal):
+                    if pd.isna(dt):
+                        continue
+                    day_key = dt.date()
+                    if day_key not in counts_by_date:
+                        counts_by_date[day_key] = {name: 0 for name in ma_pairs}
+                    if bool(is_true):
+                        counts_by_date[day_key][col_name] += 1
+        except Exception:
+            continue
+
+    download_df = pd.DataFrame(
+        [{"Date": pd.to_datetime(day), **vals} for day, vals in counts_by_date.items()]
+    )
+
+    if download_df.empty:
+        return pd.DataFrame(columns=["Date", *ma_pairs.keys(), "Closing price"])
+
+    download_df = download_df.sort_values("Date").reset_index(drop=True)
+    download_df["Closing price"] = np.nan
+
+    nifty_candidates = ["Nifty 50", "NIFTY 50", "NIFTY"]
+    for nifty_symbol in nifty_candidates:
+        nifty_file = os.path.join(full_data_dir, f"{nifty_symbol}.csv")
+        if not os.path.exists(nifty_file):
+            continue
+
+        try:
+            nifty_df = pd.read_csv(nifty_file)
+            nifty_df["Date"] = pd.to_datetime(nifty_df["Date"], utc=True, errors="coerce").dt.tz_convert(None)
+            nifty_df = nifty_df[["Date", "Close"]].dropna().rename(columns={"Close": "Closing price"})
+
+            if tf == "Weekly":
+                nifty_df = (
+                    nifty_df.set_index("Date")
+                    .resample("W")
+                    .last()
+                    .dropna()
+                    .reset_index()
+                )
+
+            download_df = download_df.merge(nifty_df, on="Date", how="left", suffixes=("", "_from_file"))
+            if "Closing price_from_file" in download_df.columns:
+                download_df["Closing price"] = download_df["Closing price_from_file"]
+                download_df = download_df.drop(columns=["Closing price_from_file"])
+            break
+        except Exception:
+            continue
+
+    ordered_cols = ["Date", *ma_pairs.keys(), "Closing price"]
+    return download_df[ordered_cols]
+
+
 # ---------- BUILD SUMMARY TABLE (BEST STRATEGY PER STOCK) ----------
 rows = []
 symbols_to_process = []
@@ -388,7 +482,8 @@ if not summary_df.empty:
 st.subheader("📊 Stock Performance Summary (Best Historical Strategy)")
 
 if not summary_df.empty:
-    csv = summary_df.to_csv(index=False).encode('utf-8')
+    download_df = build_download_csv(symbols_to_process, timeframe)
+    csv = download_df.to_csv(index=False).encode('utf-8')
     st.download_button(
         label=f"Download {universe} Data as CSV",
         data=csv,
@@ -419,11 +514,6 @@ grid_response = AgGrid(
 
 # ---------- HANDLE ROW SELECTION ----------
 selected_rows = grid_response.get("selected_rows", None)
-
-# Debug Expander (Checking why selection might fail)
-with st.expander("Debug: Raw Selection Data", expanded=False):
-    st.write("Selected Rows Type:", type(selected_rows))
-    st.write("Selected Rows Content:", selected_rows)
 
 has_selection = selected_rows is not None and (
     (isinstance(selected_rows, pd.DataFrame) and not selected_rows.empty)
