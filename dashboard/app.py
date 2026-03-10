@@ -343,7 +343,7 @@ def build_download_csv(stock_list, tf):
 
 
 
-        return pd.DataFrame(columns=["Date", *ma_pairs.keys(), "NIFTY*"])
+    return pd.DataFrame(columns=["Date", *ma_pairs.keys(), "NIFTY*"])
 
     download_df = download_df.sort_values("Date").reset_index(drop=True)
 
