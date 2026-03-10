@@ -221,6 +221,7 @@ def build_download_csv(stock_list, tf):
 
             if tf == "Weekly":
                 df.set_index("Date", inplace=True)
+
                 df = df.resample("W").agg({
                     "Open": "first",
                     "High": "max",
@@ -228,6 +229,9 @@ def build_download_csv(stock_list, tf):
                     "Close": "last",
                     "Volume": "sum",
                 })
+
+                df = df.resample("W").agg({"Open": "first", "High": "max", "Low": "min", "Close": "last", "Volume": "sum"})
+
                 df.dropna(inplace=True)
                 df.reset_index(inplace=True)
 
@@ -260,12 +264,26 @@ def build_download_csv(stock_list, tf):
     ])
 
     if download_df.empty:
+
+
+
+
         return pd.DataFrame(columns=["Date", *ma_pairs.keys(), "Closing price"])
 
     download_df = download_df.sort_values("Date").reset_index(drop=True)
 
     # Add closing price (NIFTY close) if available.
     download_df["Closing price"] = np.nan
+
+
+        return pd.DataFrame(columns=["Date", *ma_pairs.keys(), "NIFTY*"])
+
+    download_df = download_df.sort_values("Date").reset_index(drop=True)
+
+    # Add NIFTY* close if available.
+    download_df["NIFTY*"] = np.nan
+
+
     nifty_candidates = ["Nifty 50", "NIFTY 50", "NIFTY"]
     for nifty_symbol in nifty_candidates:
         nifty_file = os.path.join(full_data_dir, f"{nifty_symbol}.csv")
@@ -274,6 +292,7 @@ def build_download_csv(stock_list, tf):
         try:
             nifty_df = pd.read_csv(nifty_file)
             nifty_df["Date"] = pd.to_datetime(nifty_df["Date"], utc=True, errors="coerce").dt.tz_convert(None)
+
             nifty_df = nifty_df[["Date", "Close"]].dropna().rename(columns={"Close": "Closing price"})
             if tf == "Weekly":
                 nifty_df.set_index("Date", inplace=True)
@@ -283,11 +302,39 @@ def build_download_csv(stock_list, tf):
             if "Closing price_from_file" in download_df.columns:
                 download_df["Closing price"] = download_df["Closing price_from_file"]
                 download_df = download_df.drop(columns=["Closing price_from_file"])
+
+
+            nifty_df = nifty_df[["Date", "Close"]].dropna().rename(columns={"Close": "Closing price"})
+
+            nifty_df = nifty_df[["Date", "Close"]].dropna().rename(columns={"Close": "NIFTY*"})
+
+            if tf == "Weekly":
+                nifty_df.set_index("Date", inplace=True)
+                nifty_df = nifty_df.resample("W").last().dropna().reset_index()
+            download_df = download_df.merge(nifty_df, on="Date", how="left", suffixes=("", "_from_file"))
+
+            if "Closing price_from_file" in download_df.columns:
+                download_df["Closing price"] = download_df["Closing price_from_file"]
+                download_df = download_df.drop(columns=["Closing price_from_file"])
+
+            if "NIFTY*_from_file" in download_df.columns:
+                download_df["NIFTY*"] = download_df["NIFTY*_from_file"]
+                download_df = download_df.drop(columns=["NIFTY*_from_file"])
+
+
             break
         except Exception:
             continue
 
+
     ordered_cols = ["Date", *ma_pairs.keys(), "Closing price"]
+
+
+    ordered_cols = ["Date", *ma_pairs.keys(), "Closing price"]
+
+    ordered_cols = ["Date", *ma_pairs.keys(), "NIFTY*"]
+
+
     return download_df[ordered_cols]
 
 
