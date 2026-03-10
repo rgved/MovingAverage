@@ -513,11 +513,6 @@ grid_response = AgGrid(
 # ---------- HANDLE ROW SELECTION ----------
 selected_rows = grid_response.get("selected_rows", None)
 
-# Debug Expander (Checking why selection might fail)
-with st.expander("Debug: Raw Selection Data", expanded=False):
-    st.write("Selected Rows Type:", type(selected_rows))
-    st.write("Selected Rows Content:", selected_rows)
-
 has_selection = selected_rows is not None and (
     (isinstance(selected_rows, pd.DataFrame) and not selected_rows.empty)
     or (isinstance(selected_rows, list) and len(selected_rows) > 0)
