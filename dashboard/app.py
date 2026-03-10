@@ -222,6 +222,9 @@ def build_download_csv(stock_list, tf):
             if tf == "Weekly":
                 df.set_index("Date", inplace=True)
 
+
+
+
                 df = df.resample("W").agg({
                     "Open": "first",
                     "High": "max",
@@ -230,7 +233,10 @@ def build_download_csv(stock_list, tf):
                     "Volume": "sum",
                 })
 
+
+
                 df = df.resample("W").agg({"Open": "first", "High": "max", "Low": "min", "Close": "last", "Volume": "sum"})
+
 
                 df.dropna(inplace=True)
                 df.reset_index(inplace=True)
@@ -255,6 +261,19 @@ def build_download_csv(stock_list, tf):
         except Exception:
             continue
 
+
+    download_df = pd.DataFrame(
+        [
+            {
+                "Date": pd.to_datetime(day),
+                **vals,
+            }
+            for day, vals in counts_by_date.items()
+        ]
+    )
+
+    if download_df.empty:
+
     download_df = pd.DataFrame([
         {
             "Date": pd.to_datetime(day),
@@ -268,12 +287,14 @@ def build_download_csv(stock_list, tf):
 
 
 
+
         return pd.DataFrame(columns=["Date", *ma_pairs.keys(), "Closing price"])
 
     download_df = download_df.sort_values("Date").reset_index(drop=True)
 
     # Add closing price (NIFTY close) if available.
     download_df["Closing price"] = np.nan
+
 
 
         return pd.DataFrame(columns=["Date", *ma_pairs.keys(), "NIFTY*"])
@@ -284,14 +305,22 @@ def build_download_csv(stock_list, tf):
     download_df["NIFTY*"] = np.nan
 
 
+
     nifty_candidates = ["Nifty 50", "NIFTY 50", "NIFTY"]
     for nifty_symbol in nifty_candidates:
         nifty_file = os.path.join(full_data_dir, f"{nifty_symbol}.csv")
         if not os.path.exists(nifty_file):
             continue
+
+
         try:
             nifty_df = pd.read_csv(nifty_file)
             nifty_df["Date"] = pd.to_datetime(nifty_df["Date"], utc=True, errors="coerce").dt.tz_convert(None)
+
+        try:
+            nifty_df = pd.read_csv(nifty_file)
+            nifty_df["Date"] = pd.to_datetime(nifty_df["Date"], utc=True, errors="coerce").dt.tz_convert(None)
+
 
             nifty_df = nifty_df[["Date", "Close"]].dropna().rename(columns={"Close": "Closing price"})
             if tf == "Weekly":
@@ -302,6 +331,7 @@ def build_download_csv(stock_list, tf):
             if "Closing price_from_file" in download_df.columns:
                 download_df["Closing price"] = download_df["Closing price_from_file"]
                 download_df = download_df.drop(columns=["Closing price_from_file"])
+
 
 
             nifty_df = nifty_df[["Date", "Close"]].dropna().rename(columns={"Close": "Closing price"})
@@ -322,6 +352,7 @@ def build_download_csv(stock_list, tf):
                 download_df = download_df.drop(columns=["NIFTY*_from_file"])
 
 
+
             break
         except Exception:
             continue
@@ -332,7 +363,11 @@ def build_download_csv(stock_list, tf):
 
     ordered_cols = ["Date", *ma_pairs.keys(), "Closing price"]
 
+
+    ordered_cols = ["Date", *ma_pairs.keys(), "Closing price"]
+
     ordered_cols = ["Date", *ma_pairs.keys(), "NIFTY*"]
+
 
 
     return download_df[ordered_cols]
