@@ -169,11 +169,15 @@ def calculate_crossovers(stock_list, tf, years):
                 df["Signal"] = np.where(df["MA_Fast"] > df["MA_Slow"], 1, -1)
                 df["Crossover"] = df["Signal"].diff()
                 
+                
                 # Filter for crossovers (2 = Buy, -2 = Sell)
                 crossovers = df[df["Crossover"].abs() == 2]
                 
                 if not crossovers.empty:
-                    last_crossover = crossovers.iloc[-1]["Date"]
+                    last_crossover_row = crossovers.iloc[-1]
+                    last_crossover = last_crossover_row["Date"]
+                    crossover_type = "Bullish" if last_crossover_row["Crossover"] == 2 else "Bearish"
+                    
                     # Count trades in last 3 months
                     three_months_ago = df["Date"].max() - pd.DateOffset(months=3)
                     recent_trades = crossovers[crossovers["Date"] >= three_months_ago]
@@ -181,7 +185,8 @@ def calculate_crossovers(stock_list, tf, years):
                     
                     crossover_data[symbol] = {
                         "Recent Bullish Crossover": last_crossover,
-                        "Recent 3M Trades": recent_trade_count
+                        "Recent 3M Trades": recent_trade_count,
+                        "Crossover Type": crossover_type
                     }
             else:
                  pass # No report found
@@ -193,25 +198,29 @@ def calculate_crossovers(stock_list, tf, years):
 
 
 @st.cache_data
-def build_download_csv(stock_list, tf):
-    """Build a market-breadth style export with fixed columns."""
+def build_download_csv(tf, ma_type_filter, crossover_filter, fast_mas, slow_mas, days_limit):
+    """Build a market-breadth style export parameterized by custom MA selections."""
     
     full_data_dir = os.path.join(BASE_DIR, "data", "processed")
 
-    ma_pairs = {
-        "Bullish_20/50": (20, 50),
-        "Bullish_12/26": (12, 26),
-        "Bullish_50/100": (50, 100),
-        "Bullish_50/200": (50, 200),
-        "Bearish_20/5": (20, 5),
-        "Bearish_12/26": (12, 26),
-        "Bearish_50/100": (50, 100),
-        "Bearish_50/200": (50, 200),
-    }
+    # Construct the selected permutations of Fast/Slow MAs based on user input
+    # (Only keeping valid pairs where Fast < Slow)
+    ma_pairs = {}
+    for f in fast_mas:
+        for s in slow_mas:
+            if f < s:
+                # Add Bullish or Bearish or both based on the filter
+                if crossover_filter in ["Both", "Bullish"]:
+                    ma_pairs[f"Bullish_{f}/{s}"] = (f, s, "Bullish")
+                if crossover_filter in ["Both", "Bearish"]:
+                    ma_pairs[f"Bearish_{f}/{s}"] = (f, s, "Bearish")
 
     counts_by_date = {}
 
-    for symbol in stock_list:
+    for file in os.listdir(full_data_dir):
+        if not file.endswith(".csv"):
+            continue
+        symbol = file.replace(".csv", "")
 
         price_file = os.path.join(full_data_dir, f"{symbol}.csv")
         if not os.path.exists(price_file):
@@ -237,29 +246,60 @@ def build_download_csv(stock_list, tf):
                     .dropna()
                     .reset_index()
                 )
+                
+            # Precompute required MAs for this stock based on permutations
+            ma_calcs = {}
+            for f, s, _ in ma_pairs.values():
+                if f not in ma_calcs:
+                    if ma_type_filter in ["Both", "EMA"]:
+                        ma_calcs[f"EMA_{f}"] = df["Close"].ewm(span=f, adjust=False).mean()
+                    if ma_type_filter in ["Both", "SMA"]:
+                        ma_calcs[f"SMA_{f}"] = df["Close"].rolling(f).mean()
+                        
+                if s not in ma_calcs:
+                    if ma_type_filter in ["Both", "EMA"]:
+                        ma_calcs[f"EMA_{s}"] = df["Close"].ewm(span=s, adjust=False).mean()
+                    if ma_type_filter in ["Both", "SMA"]:
+                        ma_calcs[f"SMA_{s}"] = df["Close"].rolling(s).mean()
 
-            for col_name, (fast, slow) in ma_pairs.items():
-
-                fast_ema = df["Close"].ewm(span=fast, adjust=False).mean()
-                slow_ema = df["Close"].ewm(span=slow, adjust=False).mean()
-
-                if col_name.startswith("Bullish"):
-                    signal = fast_ema > slow_ema
-                else:
-                    signal = fast_ema <= slow_ema
-
-                for dt, is_true in zip(df["Date"], signal):
-
-                    if pd.isna(dt):
-                        continue
-
-                    day_key = dt.date()
-
-                    if day_key not in counts_by_date:
-                        counts_by_date[day_key] = {k: 0 for k in ma_pairs}
-
-                    if bool(is_true):
-                        counts_by_date[day_key][col_name] += 1
+            for col_name, (fast, slow, cross) in ma_pairs.items():
+                
+                # If Both MA Types are selected, we evaluate EMA and SMA and count if ANY matches true 
+                # (or just follow the dominant strategy, but here we process each individually)
+                types_to_check = ["EMA", "SMA"] if ma_type_filter == "Both" else [ma_type_filter]
+                
+                # Track which dates this stock already contributed to for this col_name,
+                # so we don't double-count when checking both EMA and SMA.
+                counted_dates = set()
+                
+                for m_type in types_to_check:
+                    fast_series = ma_calcs[f"{m_type}_{fast}"]
+                    slow_series = ma_calcs[f"{m_type}_{slow}"]
+                    
+                    # Compute signal and crossover diff
+                    # 1 = Bullish state, -1 = Bearish state
+                    raw_signal = np.where(fast_series > slow_series, 1, -1)
+                    # Diff: 2 = Bullish Crossover, -2 = Bearish Crossover
+                    crossover_diff = pd.Series(raw_signal).diff().fillna(0)
+                    
+                    if cross == "Bullish":
+                        signal_triggered = crossover_diff == 2
+                    else:
+                        signal_triggered = crossover_diff == -2
+                        
+                    for dt, is_triggered in zip(df["Date"], signal_triggered):
+                        if pd.isna(dt):
+                            continue
+                            
+                        day_key = dt.date()
+                        if day_key not in counts_by_date:
+                            counts_by_date[day_key] = {k: 0 for k in ma_pairs}
+                            
+                        if bool(is_triggered) and day_key not in counted_dates:
+                            counts_by_date[day_key][col_name] += 1
+                            # Track this date so we don't double-count if checking
+                            # both EMA and SMA for the same stock.
+                            counted_dates.add(day_key)
 
         except Exception:
             continue
@@ -317,9 +357,15 @@ def build_download_csv(stock_list, tf):
     if not nifty_found:
         download_df["NIFTY*"] = np.nan
 
-    ordered_cols = ["Date", *ma_pairs.keys(), "NIFTY*"]
+    ordered_cols = ["Date", *list(ma_pairs.keys()), "NIFTY*"]
+    
+    # Filter based on user-defined number of days
+    # (Getting the max date and slicing the past `days_limit`)
+    max_date = download_df["Date"].max()
+    cutoff_date = max_date - pd.Timedelta(days=days_limit)
+    download_df = download_df[download_df["Date"] >= cutoff_date]
 
-    return download_df[ordered_cols]
+    return download_df[ordered_cols].reset_index(drop=True)
 
 
 # ---------- BUILD SUMMARY TABLE (BEST STRATEGY PER STOCK) ----------
@@ -491,8 +537,10 @@ for row in rows:
         cross_date = crossover_map[sym]["Recent Bullish Crossover"]
         if cross_date.year < 1900:
              row["Crossover Date"] = "-"
+             row["Crossover Signal"] = "-"
         else:
              row["Crossover Date"] = str(cross_date.date())
+             row["Crossover Signal"] = crossover_map[sym].get("Crossover Type", "-")
         row["Recent Bullish Crossover"] = cross_date
         
         # Update Trades count to reflect only last 3 months
@@ -500,6 +548,7 @@ for row in rows:
             row["Trades"] = crossover_map[sym]["Recent 3M Trades"]
     else:
         row["Crossover Date"] = "-"
+        row["Crossover Signal"] = "-"
         row["Recent Bullish Crossover"] = pd.Timestamp.min
 
 summary_df = pd.DataFrame(rows)
@@ -512,20 +561,36 @@ if not summary_df.empty:
     summary_df = summary_df.drop(columns=["RawSymbol", "RawWinRate", "Recent Bullish Crossover"])
     summary_df = summary_df.reset_index(drop=True)
 
+# ---------- CUSTOM SCRENER CONTROLS ----------
+st.subheader("🎯 Refine Screener")
+with st.form("screener_form"):
+    c1, c2, c3 = st.columns(3)
+    with c1:
+        scr_ma_type = st.selectbox("MA Type", ["Both", "SMA", "EMA"], index=0)
+    with c2:
+        scr_fast_ma = st.selectbox("Fast MA", options=[5, 10, 12, 20, 50], index=3)
+    with c3:
+        scr_slow_ma = st.selectbox("Slow MA", options=[20, 26, 50, 100, 200], index=2)
+        
+    refine_btn = st.form_submit_button("Refine Screener")
 
+if refine_btn and not summary_df.empty:
+    if scr_fast_ma >= scr_slow_ma:
+        st.warning("Fast MA must be smaller than Slow MA to filter properly.")
+    else:
+        # Filter logic based on choices
+        target_pair = f"{scr_fast_ma}/{scr_slow_ma}"
+        
+        mask = (summary_df["Best MA Pair"] == target_pair)
+        if scr_ma_type != "Both":
+            mask = mask & (summary_df["Best MA Type"] == scr_ma_type)
+            
+        summary_df = summary_df[mask].reset_index(drop=True)
+        if summary_df.empty:
+            st.info(f"No stocks found with Best Strategy = {scr_ma_type if scr_ma_type != 'Both' else 'Any'} {target_pair}")
 
 # ---------- TABLE ----------
 st.subheader("📊 Stock Performance Summary (Best Historical Strategy)")
-
-if not summary_df.empty:
-    download_df = build_download_csv(symbols_to_process, timeframe)
-    csv = download_df.to_csv(index=False).encode('utf-8')
-    st.download_button(
-        label=f"Download {universe} Data as CSV",
-        data=csv,
-        file_name=f"{universe.replace(' ', '_').lower()}_strategy_summary.csv",
-        mime="text/csv",
-    )
 
 gb = GridOptionsBuilder.from_dataframe(summary_df)
 gb.configure_selection(selection_mode="single", use_checkbox=False)
@@ -548,7 +613,48 @@ grid_response = AgGrid(
     theme="streamlit",
 )
 
-# ---------- HANDLE ROW SELECTION ----------
+st.markdown("---")
+# ---------- CSV DOWNLOAD CONFIGURATION SECTION ----------
+st.subheader("📥 Download CSV Options")
+
+with st.form("csv_download_options"):
+    
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        csv_ma_type = st.selectbox("Type of MA", ["Both", "SMA", "EMA"])
+    with col2:
+        csv_crossover = st.selectbox("Crossover", ["Both", "Bullish", "Bearish"])
+    with col3:
+        csv_days = st.selectbox("No. of Days", [30, 60, 90], index=2)
+        
+    col4, col5 = st.columns(2)
+    with col4:
+        # User specified if none are selected, select all options
+        preselected_fast = [5, 10, 12, 20, 50]
+        csv_fast_mas = st.multiselect("Fast MA", options=[5, 10, 12, 20, 50], default=preselected_fast)
+    with col5:
+        preselected_slow = [20, 26, 50, 100, 200]
+        csv_slow_mas = st.multiselect("Slow MA", options=[20, 26, 50, 100, 200], default=preselected_slow)
+        
+    generate_btn = st.form_submit_button("Generate Export Data")
+
+if generate_btn:
+    if not csv_fast_mas:
+        csv_fast_mas = [5, 10, 12, 20, 50]
+    if not csv_slow_mas:
+        csv_slow_mas = [20, 26, 50, 100, 200]
+        
+    with st.spinner("Compiling CSV Data Based on Selections..."):
+        custom_csv_df = build_download_csv(timeframe, csv_ma_type, csv_crossover, csv_fast_mas, csv_slow_mas, csv_days)
+        csv_bytes = custom_csv_df.to_csv(index=False).encode('utf-8')
+        
+    st.success("CSV Ready For Download!")
+    st.download_button(
+        label=f"Download {universe} Data as CSV",
+        data=csv_bytes,
+        file_name=f"{universe.replace(' ', '_').lower()}_custom_summary.csv",
+        mime="text/csv",
+    )
 selected_rows = grid_response.get("selected_rows", None)
 
 has_selection = selected_rows is not None and (
