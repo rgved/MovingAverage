@@ -221,6 +221,9 @@ def build_download_csv(stock_list, tf):
 
             if tf == "Weekly":
 
+
+
+
                 df = (
                     df.set_index("Date")
                     .resample("W")
@@ -228,6 +231,13 @@ def build_download_csv(stock_list, tf):
                     .dropna()
                     .reset_index()
                 )
+
+
+            for col_name, (fast, slow) in ma_pairs.items():
+                fast_ema = df["Close"].ewm(span=fast, adjust=False).mean()
+                slow_ema = df["Close"].ewm(span=slow, adjust=False).mean()
+                signal = (fast_ema > slow_ema) if col_name.startswith("Bullish") else (fast_ema <= slow_ema)
+
 
                 df.set_index("Date", inplace=True)
 
@@ -264,6 +274,7 @@ def build_download_csv(stock_list, tf):
                     signal = fast_ema <= slow_ema
 
 
+
                 for dt, is_true in zip(df["Date"], signal):
                     if pd.isna(dt):
                         continue
@@ -272,7 +283,11 @@ def build_download_csv(stock_list, tf):
 
                         counts_by_date[day_key] = {name: 0 for name in ma_pairs}
 
+
+                        counts_by_date[day_key] = {name: 0 for name in ma_pairs}
+
                         counts_by_date[day_key] = {k: 0 for k in ma_pairs}
+
 
                     if bool(is_true):
                         counts_by_date[day_key][col_name] += 1
@@ -289,6 +304,7 @@ def build_download_csv(stock_list, tf):
 
     download_df = download_df.sort_values("Date").reset_index(drop=True)
     download_df["Closing price"] = np.nan
+
 
 
 
@@ -337,6 +353,7 @@ def build_download_csv(stock_list, tf):
 
 
 
+
     nifty_candidates = ["Nifty 50", "NIFTY 50", "NIFTY"]
     for nifty_symbol in nifty_candidates:
         nifty_file = os.path.join(full_data_dir, f"{nifty_symbol}.csv")
@@ -362,6 +379,7 @@ def build_download_csv(stock_list, tf):
             if "Closing price_from_file" in download_df.columns:
                 download_df["Closing price"] = download_df["Closing price_from_file"]
                 download_df = download_df.drop(columns=["Closing price_from_file"])
+
 
 
         try:
@@ -405,6 +423,7 @@ def build_download_csv(stock_list, tf):
 
 
 
+
             break
         except Exception:
             continue
@@ -421,7 +440,11 @@ def build_download_csv(stock_list, tf):
 
     ordered_cols = ["Date", *ma_pairs.keys(), "Closing price"]
 
+
+    ordered_cols = ["Date", *ma_pairs.keys(), "Closing price"]
+
     ordered_cols = ["Date", *ma_pairs.keys(), "NIFTY*"]
+
 
 
 
