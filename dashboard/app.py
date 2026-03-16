@@ -216,6 +216,7 @@ def build_download_csv(tf, ma_type_filter, crossover_filter, fast_mas, slow_mas,
                     ma_pairs[f"Bearish_{f}/{s}"] = (f, s, "Bearish")
 
     counts_by_date = {}
+    names_by_date = {}  # Track stock names per date per MA pair
 
     for file in os.listdir(full_data_dir):
         if not file.endswith(".csv"):
@@ -262,6 +263,9 @@ def build_download_csv(tf, ma_type_filter, crossover_filter, fast_mas, slow_mas,
                     if ma_type_filter in ["Both", "SMA"]:
                         ma_calcs[f"SMA_{s}"] = df["Close"].rolling(s).mean()
 
+            # Clean symbol name for display (remove .NS suffix)
+            display_name = symbol.split(".")[0] if "." in symbol else symbol
+
             for col_name, (fast, slow, cross) in ma_pairs.items():
                 
                 # If Both MA Types are selected, we evaluate EMA and SMA and count if ANY matches true 
@@ -294,9 +298,11 @@ def build_download_csv(tf, ma_type_filter, crossover_filter, fast_mas, slow_mas,
                         day_key = dt.date()
                         if day_key not in counts_by_date:
                             counts_by_date[day_key] = {k: 0 for k in ma_pairs}
+                            names_by_date[day_key] = {k: [] for k in ma_pairs}
                             
                         if bool(is_triggered) and day_key not in counted_dates:
                             counts_by_date[day_key][col_name] += 1
+                            names_by_date[day_key][col_name].append(display_name)
                             # Track this date so we don't double-count if checking
                             # both EMA and SMA for the same stock.
                             counted_dates.add(day_key)
@@ -315,6 +321,24 @@ def build_download_csv(tf, ma_type_filter, crossover_filter, fast_mas, slow_mas,
         return pd.DataFrame(columns=["Date", *ma_pairs.keys(), "NIFTY*"])
 
     download_df = download_df.sort_values("Date").reset_index(drop=True)
+
+    # Build stock names columns (comma-separated)
+    names_rows = []
+    for day in download_df["Date"]:
+        day_key = day.date()
+        if day_key in names_by_date:
+            names_rows.append({
+                f"Stocks_{k}": ",".join(v) if v else ""
+                for k, v in names_by_date[day_key].items()
+            })
+        else:
+            names_rows.append({f"Stocks_{k}": "" for k in ma_pairs})
+    
+    names_df = pd.DataFrame(names_rows)
+    download_df = pd.concat([download_df, names_df], axis=1)
+
+    # Normalize download_df dates to midnight for consistent merging
+    download_df["Date"] = download_df["Date"].dt.normalize()
 
     # ---------- ADD NIFTY CLOSE ----------
 
@@ -337,6 +361,8 @@ def build_download_csv(tf, ma_type_filter, crossover_filter, fast_mas, slow_mas,
 
             nifty_df = nifty_df[["Date", "Close"]].dropna()
             nifty_df.rename(columns={"Close": "NIFTY*"}, inplace=True)
+            # Normalize to midnight for consistent merging
+            nifty_df["Date"] = nifty_df["Date"].dt.normalize()
 
             if tf == "Weekly":
                 nifty_df = (
@@ -348,6 +374,8 @@ def build_download_csv(tf, ma_type_filter, crossover_filter, fast_mas, slow_mas,
                 )
 
             download_df = download_df.merge(nifty_df, on="Date", how="left")
+            # Forward-fill missing NIFTY values (handles trading holidays)
+            download_df["NIFTY*"] = download_df["NIFTY*"].ffill()
             nifty_found = True
             break
 
@@ -381,6 +409,8 @@ def build_download_csv(tf, ma_type_filter, crossover_filter, fast_mas, slow_mas,
                     )
 
                 download_df = download_df.merge(nifty_yf, on="Date", how="left")
+                # Forward-fill missing NIFTY values (handles trading holidays)
+                download_df["NIFTY*"] = download_df["NIFTY*"].ffill()
                 nifty_found = True
         except Exception:
             pass
@@ -388,7 +418,12 @@ def build_download_csv(tf, ma_type_filter, crossover_filter, fast_mas, slow_mas,
         if not nifty_found:
             download_df["NIFTY*"] = np.nan
 
-    ordered_cols = ["Date", *list(ma_pairs.keys()), "NIFTY*"]
+    # Build ordered columns: count columns interleaved with their stock name columns
+    ordered_cols = ["Date"]
+    for k in ma_pairs.keys():
+        ordered_cols.append(k)
+        ordered_cols.append(f"Stocks_{k}")
+    ordered_cols.append("NIFTY*")
     
     # Filter based on user-defined number of days
     # (Getting the max date and slicing the past `days_limit`)
