@@ -355,7 +355,33 @@ def build_download_csv(tf, ma_type_filter, crossover_filter, fast_mas, slow_mas,
             continue
 
     if not nifty_found:
-        download_df["NIFTY*"] = np.nan
+        # Fallback: fetch Nifty 50 from Yahoo Finance when local file is missing
+        try:
+            import yfinance as yf
+            nifty_yf = yf.download("^NSEI", period="1y", progress=False)
+            if not nifty_yf.empty:
+                nifty_yf = nifty_yf[["Close"]].reset_index()
+                nifty_yf.columns = ["Date", "NIFTY*"]
+                nifty_yf["Date"] = pd.to_datetime(nifty_yf["Date"])
+                if nifty_yf["Date"].dt.tz is not None:
+                    nifty_yf["Date"] = nifty_yf["Date"].dt.tz_localize(None)
+
+                if tf == "Weekly":
+                    nifty_yf = (
+                        nifty_yf.set_index("Date")
+                        .resample("W")
+                        .last()
+                        .dropna()
+                        .reset_index()
+                    )
+
+                download_df = download_df.merge(nifty_yf, on="Date", how="left")
+                nifty_found = True
+        except Exception:
+            pass
+
+        if not nifty_found:
+            download_df["NIFTY*"] = np.nan
 
     ordered_cols = ["Date", *list(ma_pairs.keys()), "NIFTY*"]
     
@@ -650,9 +676,9 @@ if generate_btn:
         
     st.success("CSV Ready For Download!")
     st.download_button(
-        label="Download All Universes Data as CSV",
+        label="Download All Data as CSV",
         data=csv_bytes,
-        file_name="all_nse_custom_summary.csv",
+        file_name="all_custom_summary.csv",
         mime="text/csv",
     )
 selected_rows = grid_response.get("selected_rows", None)
