@@ -359,12 +359,17 @@ def build_download_csv(tf, ma_type_filter, crossover_filter, fast_mas, slow_mas,
         try:
             import yfinance as yf
             nifty_yf = yf.download("^NSEI", period="1y", progress=False)
-            if not nifty_yf.empty:
+            # Flatten MultiIndex columns (newer yfinance returns ('Close', '^NSEI'))
+            if isinstance(nifty_yf.columns, pd.MultiIndex):
+                nifty_yf.columns = nifty_yf.columns.get_level_values(0)
+            if not nifty_yf.empty and "Close" in nifty_yf.columns:
                 nifty_yf = nifty_yf[["Close"]].reset_index()
                 nifty_yf.columns = ["Date", "NIFTY*"]
                 nifty_yf["Date"] = pd.to_datetime(nifty_yf["Date"])
                 if nifty_yf["Date"].dt.tz is not None:
-                    nifty_yf["Date"] = nifty_yf["Date"].dt.tz_localize(None)
+                    nifty_yf["Date"] = nifty_yf["Date"].dt.tz_convert(None)
+                # Normalize to midnight (strip time component) to match download_df dates
+                nifty_yf["Date"] = nifty_yf["Date"].dt.normalize()
 
                 if tf == "Weekly":
                     nifty_yf = (
