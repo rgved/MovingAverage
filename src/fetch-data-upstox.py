@@ -66,6 +66,8 @@ def fetch_history(symbol, instrument_key, days=1095):
 
 
 if __name__ == "__main__":
-    for sym, key in SYMBOL_MAP.items():
+    total_symbols = len(SYMBOL_MAP)
+    for idx, (sym, key) in enumerate(SYMBOL_MAP.items(), 1):
         fetch_history(sym, key)
+        print(f"PROGRESS:{idx}/{total_symbols}", flush=True)
 

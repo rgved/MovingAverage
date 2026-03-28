@@ -78,22 +78,26 @@ def process_all(data_dir=RAW_DATA_DIR,
 
     os.makedirs(out_dir, exist_ok=True)
 
-    for file in os.listdir(data_dir):
-        if file.endswith(".csv"):
-            symbol = file.replace(".csv", "") # Assumes filename is symbol.csv
-            base_symbol = symbol.split(".")[0] # Remove .NS or similar extensions if present for check, or assume FNO_STOCKS has clean names
-            
-            # F&O and Indices Filter
-            # Check if it's F&O (base_symbol) OR an Index (full symbol)
-            if (base_symbol not in FNO_STOCKS) and (symbol not in INDICES):
-                print(f"Skipping {file} (Not F&O/Index)")
-                continue
+    files = [f for f in os.listdir(data_dir) if f.endswith(".csv")]
+    total_files = len(files)
 
-            path = os.path.join(data_dir, file)
-            df = process_file(path, ma_type, fast, slow)
-            out_path = os.path.join(out_dir, file)
-            df.to_csv(out_path, index=False)
-            print(f"OK Processed {file} -> {out_path}")
+    for idx, file in enumerate(files, 1):
+        symbol = file.replace(".csv", "") # Assumes filename is symbol.csv
+        base_symbol = symbol.split(".")[0] # Remove .NS or similar extensions if present for check, or assume FNO_STOCKS has clean names
+        
+        # F&O and Indices Filter
+        # Check if it's F&O (base_symbol) OR an Index (full symbol)
+        if (base_symbol not in FNO_STOCKS) and (symbol not in INDICES):
+            print(f"Skipping {file} (Not F&O/Index)")
+            print(f"PROGRESS:{idx}/{total_files}", flush=True)
+            continue
+
+        path = os.path.join(data_dir, file)
+        df = process_file(path, ma_type, fast, slow)
+        out_path = os.path.join(out_dir, file)
+        df.to_csv(out_path, index=False)
+        print(f"OK Processed {file} -> {out_path}")
+        print(f"PROGRESS:{idx}/{total_files}", flush=True)
 
 # ---------- RUN ----------
 if __name__ == "__main__":

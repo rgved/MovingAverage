@@ -26,30 +26,33 @@ print(
 summary = []
 
 # ---------- Trim Loop ----------
-for file in os.listdir(INPUT_DIR):
-    if file.endswith(".csv"):
-        file_path = os.path.join(INPUT_DIR, file)
-        df = pd.read_csv(file_path)
+files = [f for f in os.listdir(INPUT_DIR) if f.endswith(".csv")]
+total_files = len(files)
 
-        # Parse date safely (expecting naive dates from features.py, but handling potential TZ just in case)
-        df["Date"] = pd.to_datetime(df["Date"], utc=True).dt.tz_convert("Asia/Kolkata").dt.tz_localize(None)
+for idx, file in enumerate(files, 1):
+    file_path = os.path.join(INPUT_DIR, file)
+    df = pd.read_csv(file_path)
 
-        df = df.sort_values("Date")
+    # Parse date safely (expecting naive dates from features.py, but handling potential TZ just in case)
+    df["Date"] = pd.to_datetime(df["Date"], utc=True).dt.tz_convert("Asia/Kolkata").dt.tz_localize(None)
 
-        # Filter rolling window
-        df_trimmed = df[
-            (df["Date"] >= START_DATE) &
-            (df["Date"] <= END_DATE)
-        ]
+    df = df.sort_values("Date")
 
-        out_path = os.path.join(OUTPUT_DIR, file)
-        df_trimmed.to_csv(out_path, index=False)
+    # Filter rolling window
+    df_trimmed = df[
+        (df["Date"] >= START_DATE) &
+        (df["Date"] <= END_DATE)
+    ]
 
-        row_count = len(df_trimmed)
-        status = "OK" if row_count > 0 else "! EMPTY"
-        print(f"{status} {file:<25} | {row_count:>4} rows retained")
+    out_path = os.path.join(OUTPUT_DIR, file)
+    df_trimmed.to_csv(out_path, index=False)
 
-        summary.append((file, row_count))
+    row_count = len(df_trimmed)
+    status = "OK" if row_count > 0 else "! EMPTY"
+    print(f"{status} {file:<25} | {row_count:>4} rows retained")
+    print(f"PROGRESS:{idx}/{total_files}", flush=True)
+
+    summary.append((file, row_count))
 
 # ---------- Summary ----------
 print("\n Summary Report")

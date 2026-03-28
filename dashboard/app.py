@@ -65,14 +65,48 @@ if new_token:
 st.sidebar.markdown("---")
 st.sidebar.header("Data Management")
 
-def run_script(script_name, status_text):
+def run_script(script_name, status_text, progress_bar, progress_text):
+    import time
     script_path = os.path.join(src_dir, script_name)
     status_text.text(f"Running {script_name}...")
+    start_time = time.time()
+    
     try:
-        result = subprocess.run([sys.executable, script_path], check=True, capture_output=True, text=True)
-        # print(result.stdout) # Optional: Log output
-    except subprocess.CalledProcessError as e:
-        st.error(f"Error running {script_name}:\n{e.stderr}")
+        process = subprocess.Popen(
+            [sys.executable, script_path],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+            bufsize=1 # Line buffered
+        )
+        
+        for line in iter(process.stdout.readline, ''):
+            if line.startswith("PROGRESS:"):
+                try:
+                    parts = line.strip().split("PROGRESS:")[1].split("/")
+                    curr = int(parts[0])
+                    total = int(parts[1])
+                    if total > 0:
+                        pct = curr / total
+                        progress_bar.progress(pct)
+                        
+                        elapsed = time.time() - start_time
+                        if curr > 0:
+                            total_estimated = elapsed / pct
+                            remaining = max(0, total_estimated - elapsed)
+                            mins, secs = divmod(int(remaining), 60)
+                            progress_text.text(f"Estimated time left: {mins}m {secs}s ({curr}/{total})")
+                except Exception:
+                    pass
+            # Optional: print(line.strip()) if debugging
+
+        process.wait()
+        if process.returncode != 0:
+            stderr_output = process.stderr.read()
+            st.error(f"Error running {script_name}:\n{stderr_output}")
+            raise subprocess.CalledProcessError(process.returncode, process.args)
+            
+    except Exception as e:
         raise e
 
 if st.sidebar.button("Update Data & Run Optimization"):
@@ -81,20 +115,26 @@ if st.sidebar.button("Update Data & Run Optimization"):
         st.sidebar.error("⚠ Access Token Missing! Please update the token above first.")
     else:
         status_placeholder = st.sidebar.empty()
+        # Initialize progress tracking elements inline
+        progress_bar = st.sidebar.progress(0.0)
+        progress_text = st.sidebar.empty()
+        
         try:
             with st.spinner("Running data pipeline... This may take a while."):
                 # 1. Fetch Data
-                run_script("fetch-data-upstox.py", status_placeholder)
+                run_script("fetch-data-upstox.py", status_placeholder, progress_bar, progress_text)
                 
                 # 2. Features
-                run_script("features.py", status_placeholder)
+                run_script("features.py", status_placeholder, progress_bar, progress_text)
                 
                 # 3. Trim Data
-                run_script("trim_data.py", status_placeholder)
+                run_script("trim_data.py", status_placeholder, progress_bar, progress_text)
                 
                 # 4. Optimize
-                run_script("optimize_on_dynamic_noise.py", status_placeholder)
+                run_script("optimize_on_dynamic_noise.py", status_placeholder, progress_bar, progress_text)
                 
+            progress_bar.empty()
+            progress_text.empty()
             status_placeholder.success("Pipeline completed successfully! ✅")
             st.rerun() # Refresh app to show new data
             
@@ -105,7 +145,7 @@ st.sidebar.markdown("---")
 st.sidebar.header("Filters & Sorting")
 
 
-# Lookback Period Selection (New)
+# Lookback Period Selection
 lookback_years = st.sidebar.selectbox("Lookback Period", ["1Y", "2Y", "3Y"], index=2) # Default 3Y
 years = int(lookback_years.replace("Y", ""))
 
@@ -120,7 +160,7 @@ min_trades = st.sidebar.slider("Minimum Trades", 0, 50, 5)
 
 # ---------- CACHED CROSSOVER CALCULATION ----------
 @st.cache_data
-def calculate_crossovers(stock_list, tf, years):
+def calculate_crossovers(stock_list, tf, years, screener_active=False, scr_ma_type="Both", scr_fast_ma=20, scr_slow_ma=50):
     crossover_data = {}
     
     # Use processed data (full history) instead of trimmed to ensure we find crossovers
@@ -143,53 +183,52 @@ def calculate_crossovers(stock_list, tf, years):
                 df.dropna(inplace=True)
                 df.reset_index(inplace=True)
 
-            # Optimization results (to get MA params)
-            # Construct filename based on selected lookback years
-            report_file = os.path.join(reports_dir, f"{symbol.replace('.', '_')}_{years}y_dynamic_trend_noise_optimization.csv")
-            # If for some reason report doesn't exist but price does (rare), skip
-            if not os.path.exists(report_file):
-               # Logic to handle missing report? For now skip
-               pass
-
-            # Proceed if report exists OR if we want to allow viewing chart without optimization (todo)
-            if os.path.exists(report_file):
+            if screener_active:
+                # When screener is active, compute crossovers DIRECTLY from price data
+                # using the user-selected MA pair. No dependency on reports.
+                fast = scr_fast_ma
+                slow = scr_slow_ma
+                ma_type = scr_ma_type if scr_ma_type != "Both" else "EMA"
+            else:
+                # Use the report's best strategy
+                report_file = os.path.join(reports_dir, f"{symbol.replace('.', '_')}_{years}y_dynamic_trend_noise_optimization.csv")
+                if not os.path.exists(report_file):
+                    continue
                 rep = pd.read_csv(report_file)
                 best = rep.iloc[0]
                 ma_type = best["MA_Type"]
                 fast, slow = map(int, best["MA_Pair"].split("/"))
 
-                # Calculate MAs
-                if ma_type == "EMA":
-                    df["MA_Fast"] = df["Close"].ewm(span=fast, adjust=False).mean()
-                    df["MA_Slow"] = df["Close"].ewm(span=slow, adjust=False).mean()
-                else:
-                    df["MA_Fast"] = df["Close"].rolling(fast).mean()
-                    df["MA_Slow"] = df["Close"].rolling(slow).mean()
-
-                df["Signal"] = np.where(df["MA_Fast"] > df["MA_Slow"], 1, -1)
-                df["Crossover"] = df["Signal"].diff()
-                
-                
-                # Filter for crossovers (2 = Buy, -2 = Sell)
-                crossovers = df[df["Crossover"].abs() == 2]
-                
-                if not crossovers.empty:
-                    last_crossover_row = crossovers.iloc[-1]
-                    last_crossover = last_crossover_row["Date"]
-                    crossover_type = "Bullish" if last_crossover_row["Crossover"] == 2 else "Bearish"
-                    
-                    # Count trades in last 3 months
-                    three_months_ago = df["Date"].max() - pd.DateOffset(months=3)
-                    recent_trades = crossovers[crossovers["Date"] >= three_months_ago]
-                    recent_trade_count = len(recent_trades)
-                    
-                    crossover_data[symbol] = {
-                        "Recent Bullish Crossover": last_crossover,
-                        "Recent 3M Trades": recent_trade_count,
-                        "Crossover Type": crossover_type
-                    }
+            # Calculate MAs
+            if ma_type == "EMA":
+                df["MA_Fast"] = df["Close"].ewm(span=fast, adjust=False).mean()
+                df["MA_Slow"] = df["Close"].ewm(span=slow, adjust=False).mean()
             else:
-                 pass # No report found
+                df["MA_Fast"] = df["Close"].rolling(fast).mean()
+                df["MA_Slow"] = df["Close"].rolling(slow).mean()
+
+            df["Signal"] = np.where(df["MA_Fast"] > df["MA_Slow"], 1, -1)
+            df["Crossover"] = df["Signal"].diff()
+            
+            
+            # Filter for crossovers (2 = Buy, -2 = Sell)
+            crossovers = df[df["Crossover"].abs() == 2]
+            
+            if not crossovers.empty:
+                last_crossover_row = crossovers.iloc[-1]
+                last_crossover = last_crossover_row["Date"]
+                crossover_type = "Bullish" if last_crossover_row["Crossover"] == 2 else "Bearish"
+                
+                # Count trades in last 3 months
+                three_months_ago = df["Date"].max() - pd.DateOffset(months=3)
+                recent_trades = crossovers[crossovers["Date"] >= three_months_ago]
+                recent_trade_count = len(recent_trades)
+                
+                crossover_data[symbol] = {
+                    "Recent Bullish Crossover": last_crossover,
+                    "Recent 3M Trades": recent_trade_count,
+                    "Crossover Type": crossover_type
+                }
             
         except Exception:
             continue
@@ -434,6 +473,46 @@ def build_download_csv(tf, ma_type_filter, crossover_filter, fast_mas, slow_mas,
     return download_df[ordered_cols].reset_index(drop=True)
 
 
+# ---------- CUSTOM SCRENER CONTROLS ----------
+if "screener_active" not in st.session_state:
+    st.session_state.screener_active = False
+if "scr_ma_type" not in st.session_state:
+    st.session_state.scr_ma_type = "Both"
+if "scr_fast_ma" not in st.session_state:
+    st.session_state.scr_fast_ma = 20
+if "scr_slow_ma" not in st.session_state:
+    st.session_state.scr_slow_ma = 50
+
+st.subheader("🎯 Refine Screener")
+with st.form("screener_form"):
+    c1, c2, c3 = st.columns(3)
+    with c1:
+        scr_ma_type_input = st.selectbox("MA Type", ["Both", "SMA", "EMA"], index=["Both", "SMA", "EMA"].index(st.session_state.scr_ma_type))
+    with c2:
+        scr_fast_ma_input = st.selectbox("Fast MA", options=[5, 10, 12, 20, 50], index=[5, 10, 12, 20, 50].index(st.session_state.scr_fast_ma))
+    with c3:
+        scr_slow_ma_input = st.selectbox("Slow MA", options=[20, 26, 50, 100, 200], index=[20, 26, 50, 100, 200].index(st.session_state.scr_slow_ma))
+        
+    colA, colB, _ = st.columns([1, 1.5, 3])
+    with colA:
+        refine_btn = st.form_submit_button("Refine Screener")
+    with colB:
+        refresh_btn = st.form_submit_button("Refresh (Clear Filter)")
+
+if refine_btn:
+    if scr_fast_ma_input >= scr_slow_ma_input:
+        st.warning("Fast MA must be smaller than Slow MA to filter properly.")
+    else:
+        st.session_state.screener_active = True
+        st.session_state.scr_ma_type = scr_ma_type_input
+        st.session_state.scr_fast_ma = scr_fast_ma_input
+        st.session_state.scr_slow_ma = scr_slow_ma_input
+        st.rerun()
+
+if refresh_btn:
+    st.session_state.screener_active = False
+    st.rerun()
+
 # ---------- BUILD SUMMARY TABLE (BEST STRATEGY PER STOCK) ----------
 rows = []
 symbols_to_process = []
@@ -478,7 +557,7 @@ for file in os.listdir(reports_dir):
         if "Nifty" in raw_name: # Simple heuristic for indices
              # Indices usually don't have dots. They might have spaces.
              # If report replaced space with _, we need to reverse it.
-             # BUT existing code blindly does replace("_", ".").
+             # BUT existing code blindly does replace("_", ".")
              
              # If universe is indices, we should be careful.
              pass
@@ -552,12 +631,36 @@ for file in os.listdir(reports_dir):
 
 
         rep = pd.read_csv(os.path.join(reports_dir, file))
-        best = rep.iloc[0]
+        if st.session_state.screener_active:
+            target_pair = f"{st.session_state.scr_fast_ma}/{st.session_state.scr_slow_ma}"
+            mask = rep["MA_Pair"] == target_pair
+            if st.session_state.scr_ma_type != "Both":
+                mask = mask & (rep["MA_Type"] == st.session_state.scr_ma_type)
+            filtered_rep = rep[mask]
+            if not filtered_rep.empty:
+                best = filtered_rep.iloc[0]
+            else:
+                # The selected MA pair is NOT in the optimization report.
+                # Still include the stock — crossovers will be computed directly from
+                # price data. Use placeholder values for backtest metrics.
+                best = pd.Series({
+                    "MA_Type": st.session_state.scr_ma_type if st.session_state.scr_ma_type != "Both" else "EMA",
+                    "MA_Pair": target_pair,
+                    "Return": 0,
+                    "WinRate": 0,
+                    "Sharpe": 0,
+                    "MarketSigma": 0,
+                    "StrategyAggr": 0,
+                    "Trades": 0,
+                })
+        else:
+            best = rep.iloc[0]
         
         trades = int(best["Trades"])
         
-        # Filter by Min Trades
-        if trades < min_trades:
+        # Filter by Min Trades (skip filter for screener placeholder rows since
+        # the real trade count will come from the crossover calculation)
+        if not st.session_state.screener_active and trades < min_trades:
             continue
 
         symbols_to_process.append(symbol)
@@ -588,13 +691,22 @@ for file in os.listdir(reports_dir):
         })
 
 if not rows:
-    st.info(
-        "No report files found yet. Run the data pipeline from the sidebar to generate reports."
-    )
+    if st.session_state.screener_active:
+        st.info("No stocks found matching the Refine Screener criteria.")
+    else:
+        st.info("No report files found yet. Run the data pipeline from the sidebar to generate reports.")
 
 # Compute crossovers (ALWAYS calc for sorting)
 with st.spinner("Calculating crossovers..."):
-    crossover_map = calculate_crossovers(symbols_to_process, timeframe, years)
+    crossover_map = calculate_crossovers(
+        symbols_to_process, 
+        timeframe, 
+        years,
+        st.session_state.screener_active,
+        st.session_state.scr_ma_type,
+        st.session_state.scr_fast_ma,
+        st.session_state.scr_slow_ma
+    )
 
 # Add crossover data to rows
 for row in rows:
@@ -627,36 +739,14 @@ if not summary_df.empty:
     summary_df = summary_df.drop(columns=["RawSymbol", "RawWinRate", "Recent Bullish Crossover"])
     summary_df = summary_df.reset_index(drop=True)
 
-# ---------- CUSTOM SCRENER CONTROLS ----------
-st.subheader("🎯 Refine Screener")
-with st.form("screener_form"):
-    c1, c2, c3 = st.columns(3)
-    with c1:
-        scr_ma_type = st.selectbox("MA Type", ["Both", "SMA", "EMA"], index=0)
-    with c2:
-        scr_fast_ma = st.selectbox("Fast MA", options=[5, 10, 12, 20, 50], index=3)
-    with c3:
-        scr_slow_ma = st.selectbox("Slow MA", options=[20, 26, 50, 100, 200], index=2)
-        
-    refine_btn = st.form_submit_button("Refine Screener")
-
-if refine_btn and not summary_df.empty:
-    if scr_fast_ma >= scr_slow_ma:
-        st.warning("Fast MA must be smaller than Slow MA to filter properly.")
-    else:
-        # Filter logic based on choices
-        target_pair = f"{scr_fast_ma}/{scr_slow_ma}"
-        
-        mask = (summary_df["Best MA Pair"] == target_pair)
-        if scr_ma_type != "Both":
-            mask = mask & (summary_df["Best MA Type"] == scr_ma_type)
-            
-        summary_df = summary_df[mask].reset_index(drop=True)
-        if summary_df.empty:
-            st.info(f"No stocks found with Best Strategy = {scr_ma_type if scr_ma_type != 'Both' else 'Any'} {target_pair}")
-
 # ---------- TABLE ----------
-st.subheader("📊 Stock Performance Summary (Best Historical Strategy)")
+table_title = "📊 Stock Performance Summary "
+if st.session_state.screener_active:
+    table_title += f"(Selected Strategy: {st.session_state.scr_ma_type if st.session_state.scr_ma_type != 'Both' else 'Any MA Type'} {st.session_state.scr_fast_ma}/{st.session_state.scr_slow_ma})"
+else:
+    table_title += "(Best Historical Strategy)"
+
+st.subheader(table_title)
 
 gb = GridOptionsBuilder.from_dataframe(summary_df)
 gb.configure_selection(selection_mode="single", use_checkbox=False)

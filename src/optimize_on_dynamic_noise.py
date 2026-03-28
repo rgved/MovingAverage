@@ -145,16 +145,22 @@ def optimize_dynamic_trend_noise(symbol, ma_pairs=None, years=1):
 # ---------- Batch Runner ----------
 def run_all_dynamic_trend_noise(symbols):
     # Loop for each lookback period (Prioritize 3Y as it's the default view)
-    for years in [3, 1, 2]:
+    lookbacks = [3, 1, 2]
+    total_steps = len(lookbacks) * len(symbols)
+    current_step = 0
+    
+    for years in lookbacks:
         print(f"\n=== STARTING OPTIMIZATION FOR {years} YEAR(S) ===")
         best = []
         for sym in symbols:
+            current_step += 1
             try:
                 res = optimize_dynamic_trend_noise(sym, years=years)
                 if not res.empty:
                     best.append(res.head(1))
             except Exception as e:
                 print(f"! {sym}: {e}")
+            print(f"PROGRESS:{current_step}/{total_steps}", flush=True)
 
         if best:
             final = pd.concat(best, ignore_index=True)
