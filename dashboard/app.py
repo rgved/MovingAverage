@@ -737,6 +737,10 @@ if not summary_df.empty:
     
     # Drop raw cols used for sorting but keep Crossover Date for display
     summary_df = summary_df.drop(columns=["RawSymbol", "RawWinRate", "Recent Bullish Crossover"])
+    
+    # Fill any NaN values to prevent st_aggrid from crashing during JSON serialization
+    summary_df = summary_df.fillna(0)
+    
     summary_df = summary_df.reset_index(drop=True)
 
 # ---------- TABLE ----------
@@ -753,12 +757,11 @@ gb.configure_selection(selection_mode="single", use_checkbox=False)
 gb.configure_grid_options(domLayout="normal")
 
 grid_options = gb.build()
-# Fix for deprecated warning: ensure rowSelection is set correctly and suppressRowClickSelection is avoided if possible
-# The warning says: As of v32.2, suppressRowClickSelection is deprecated. Use `rowSelection.enableClickSelection` instead.
-# We manually patch it for newer AG Grid versions:
+# Fix for deprecated warning: avoid suppressRowClickSelection if possible.
+# We do NOT manually override rowSelection because newer AG Grid versions require it to be an object 
+# while older versions require a string. gb.configure_selection() handles this natively.
 if "suppressRowClickSelection" in grid_options:
     del grid_options["suppressRowClickSelection"]
-grid_options["rowSelection"] = "single"  # Ensure this is set
 
 grid_response = AgGrid(
     summary_df,
