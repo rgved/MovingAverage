@@ -8,7 +8,8 @@ from dotenv import load_dotenv, set_key
 import subprocess
 import sys
 
-from st_aggrid import AgGrid, GridOptionsBuilder, GridUpdateMode, DataReturnMode
+# NOTE: st_aggrid removed — it crashes silently on Streamlit Cloud.
+# Using native st.dataframe with selection instead.
 # Import constants
 sys.path.append(os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "src"))
 try:
@@ -752,24 +753,14 @@ else:
 
 st.subheader(table_title)
 
-gb = GridOptionsBuilder.from_dataframe(summary_df)
-gb.configure_selection(selection_mode="single", use_checkbox=False)
-gb.configure_grid_options(domLayout="normal")
-
-grid_options = gb.build()
-# Fix for deprecated warning: avoid suppressRowClickSelection if possible.
-# We do NOT manually override rowSelection because newer AG Grid versions require it to be an object 
-# while older versions require a string. gb.configure_selection() handles this natively.
-if "suppressRowClickSelection" in grid_options:
-    del grid_options["suppressRowClickSelection"]
-
-grid_response = AgGrid(
+# Use native st.dataframe with selection (works reliably on Streamlit Cloud)
+event = st.dataframe(
     summary_df,
-    gridOptions=grid_options,
-    data_return_mode=DataReturnMode.FILTERED_AND_SORTED,
-    update_mode=GridUpdateMode.MODEL_CHANGED | GridUpdateMode.SELECTION_CHANGED,
-    height=350,
-    theme="streamlit",
+    use_container_width=True,
+    hide_index=True,
+    height=400,
+    on_select="rerun",
+    selection_mode="single-row",
 )
 
 st.markdown("---")
@@ -814,18 +805,13 @@ if generate_btn:
         file_name="all_custom_summary.csv",
         mime="text/csv",
     )
-selected_rows = grid_response.get("selected_rows", None)
-
-has_selection = selected_rows is not None and (
-    (isinstance(selected_rows, pd.DataFrame) and not selected_rows.empty)
-    or (isinstance(selected_rows, list) and len(selected_rows) > 0)
-)
+# Handle row selection from native st.dataframe
+selected_indices = event.selection.rows if event and event.selection else []
+has_selection = len(selected_indices) > 0
 
 if has_selection:
-    if isinstance(selected_rows, pd.DataFrame):
-        display_symbol = selected_rows.iloc[0]["Symbol"]
-    else:
-        display_symbol = selected_rows[0]["Symbol"]
+    selected_row_idx = selected_indices[0]
+    display_symbol = summary_df.iloc[selected_row_idx]["Symbol"]
         
     # Remove asterisk if present
     selected_symbol = display_symbol.replace(" *", "")
@@ -850,12 +836,8 @@ if has_selection:
             st.warning("Fast MA must be smaller than Slow MA")
             st.stop()
     else:
-        if isinstance(selected_rows, pd.DataFrame):
-            best_ma_type = selected_rows.iloc[0]["Best MA Type"]
-            best_ma_pair = selected_rows.iloc[0]["Best MA Pair"]
-        else:
-            best_ma_type = selected_rows[0]["Best MA Type"]
-            best_ma_pair = selected_rows[0]["Best MA Pair"]
+        best_ma_type = summary_df.iloc[selected_row_idx]["Best MA Type"]
+        best_ma_pair = summary_df.iloc[selected_row_idx]["Best MA Pair"]
         
         try:
             fast_viz, slow_viz = map(int, best_ma_pair.split("/"))

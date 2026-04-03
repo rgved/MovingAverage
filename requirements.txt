@@ -5,7 +5,6 @@ matplotlib
 fastapi
 uvicorn
 yfinance
-streamlit_aggrid
 python-dotenv 
 requests
 plotly
