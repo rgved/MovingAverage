@@ -189,7 +189,7 @@ def calculate_crossovers(stock_list, tf, years, screener_active=False, scr_ma_ty
                 # using the user-selected MA pair. No dependency on reports.
                 fast = scr_fast_ma
                 slow = scr_slow_ma
-                ma_type = scr_ma_type if scr_ma_type != "Both" else "EMA"
+                ma_types_to_check = ["EMA", "SMA"] if scr_ma_type == "Both" else [scr_ma_type]
             else:
                 # Use the report's best strategy
                 report_file = os.path.join(reports_dir, f"{symbol.replace('.', '_')}_{years}y_dynamic_trend_noise_optimization.csv")
@@ -197,39 +197,49 @@ def calculate_crossovers(stock_list, tf, years, screener_active=False, scr_ma_ty
                     continue
                 rep = pd.read_csv(report_file)
                 best = rep.iloc[0]
-                ma_type = best["MA_Type"]
                 fast, slow = map(int, best["MA_Pair"].split("/"))
+                ma_types_to_check = [best["MA_Type"]]
 
-            # Calculate MAs
-            if ma_type == "EMA":
-                df["MA_Fast"] = df["Close"].ewm(span=fast, adjust=False).mean()
-                df["MA_Slow"] = df["Close"].ewm(span=slow, adjust=False).mean()
-            else:
-                df["MA_Fast"] = df["Close"].rolling(fast).mean()
-                df["MA_Slow"] = df["Close"].rolling(slow).mean()
+            best_crossover_date = pd.Timestamp.min
+            best_crossover_data = None
 
-            df["Signal"] = np.where(df["MA_Fast"] > df["MA_Slow"], 1, -1)
-            df["Crossover"] = df["Signal"].diff()
-            
-            
-            # Filter for crossovers (2 = Buy, -2 = Sell)
-            crossovers = df[df["Crossover"].abs() == 2]
-            
-            if not crossovers.empty:
-                last_crossover_row = crossovers.iloc[-1]
-                last_crossover = last_crossover_row["Date"]
-                crossover_type = "Bullish" if last_crossover_row["Crossover"] == 2 else "Bearish"
+            for m_type in ma_types_to_check:
+                # Calculate MAs
+                if m_type == "EMA":
+                    ma_fast = df["Close"].ewm(span=fast, adjust=False).mean()
+                    ma_slow = df["Close"].ewm(span=slow, adjust=False).mean()
+                else:
+                    ma_fast = df["Close"].rolling(fast).mean()
+                    ma_slow = df["Close"].rolling(slow).mean()
+
+                raw_signal = np.where(ma_fast > ma_slow, 1, -1)
+                crossover_diff = pd.Series(raw_signal).diff().fillna(0)
+
+                temp_df = df.copy()
+                temp_df["Crossover"] = crossover_diff.values
                 
-                # Count trades in last 3 months
-                three_months_ago = df["Date"].max() - pd.DateOffset(months=3)
-                recent_trades = crossovers[crossovers["Date"] >= three_months_ago]
-                recent_trade_count = len(recent_trades)
+                # Filter for crossovers (2 = Bullish, -2 = Bearish)
+                crossovers = temp_df[temp_df["Crossover"].abs() == 2]
                 
-                crossover_data[symbol] = {
-                    "Recent Bullish Crossover": last_crossover,
-                    "Recent 3M Trades": recent_trade_count,
-                    "Crossover Type": crossover_type
-                }
+                if not crossovers.empty:
+                    last_crossover_row = crossovers.iloc[-1]
+                    last_crossover_date = last_crossover_row["Date"]
+                    crossover_type = "Bullish" if last_crossover_row["Crossover"] == 2 else "Bearish"
+                    
+                    # Count trades in last 3 months
+                    three_months_ago = temp_df["Date"].max() - pd.DateOffset(months=3)
+                    recent_trades = len(crossovers[crossovers["Date"] >= three_months_ago])
+                    
+                    if best_crossover_date is pd.Timestamp.min or last_crossover_date > best_crossover_date:
+                        best_crossover_date = last_crossover_date
+                        best_crossover_data = {
+                            "Recent Bullish Crossover": last_crossover_date,
+                            "Recent 3M Trades": recent_trades,
+                            "Crossover Type": crossover_type
+                        }
+            
+            if best_crossover_data:
+                crossover_data[symbol] = best_crossover_data
             
         except Exception:
             continue
@@ -256,7 +266,7 @@ def build_download_csv(tf, ma_type_filter, crossover_filter, fast_mas, slow_mas,
                     ma_pairs[f"Bearish_{f}/{s}"] = (f, s, "Bearish")
 
     counts_by_date = {}
-    names_by_date = {}  # Track stock names per date per MA pair
+    names_by_date = {}  
 
     for file in os.listdir(full_data_dir):
         if not file.endswith(".csv"):
@@ -498,7 +508,7 @@ with st.form("screener_form"):
     with colA:
         refine_btn = st.form_submit_button("Refine Screener")
     with colB:
-        refresh_btn = st.form_submit_button("Refresh (Clear Filter)")
+        refresh_btn = st.form_submit_button("Refresh")
 
 if refine_btn:
     if scr_fast_ma_input >= scr_slow_ma_input:
@@ -632,36 +642,19 @@ for file in os.listdir(reports_dir):
 
 
         rep = pd.read_csv(os.path.join(reports_dir, file))
+        best = rep.iloc[0]
+        
         if st.session_state.screener_active:
             target_pair = f"{st.session_state.scr_fast_ma}/{st.session_state.scr_slow_ma}"
-            mask = rep["MA_Pair"] == target_pair
-            if st.session_state.scr_ma_type != "Both":
-                mask = mask & (rep["MA_Type"] == st.session_state.scr_ma_type)
-            filtered_rep = rep[mask]
-            if not filtered_rep.empty:
-                best = filtered_rep.iloc[0]
-            else:
-                # The selected MA pair is NOT in the optimization report.
-                # Still include the stock — crossovers will be computed directly from
-                # price data. Use placeholder values for backtest metrics.
-                best = pd.Series({
-                    "MA_Type": st.session_state.scr_ma_type if st.session_state.scr_ma_type != "Both" else "EMA",
-                    "MA_Pair": target_pair,
-                    "Return": 0,
-                    "WinRate": 0,
-                    "Sharpe": 0,
-                    "MarketSigma": 0,
-                    "StrategyAggr": 0,
-                    "Trades": 0,
-                })
-        else:
-            best = rep.iloc[0]
-        
+            if best["MA_Pair"] != target_pair:
+                continue
+            if st.session_state.scr_ma_type != "Both" and best["MA_Type"] != st.session_state.scr_ma_type:
+                continue
+                
         trades = int(best["Trades"])
         
-        # Filter by Min Trades (skip filter for screener placeholder rows since
-        # the real trade count will come from the crossover calculation)
-        if not st.session_state.screener_active and trades < min_trades:
+        # Filter by Min Trades 
+        if trades < min_trades:
             continue
 
         symbols_to_process.append(symbol)
