@@ -1,0 +1,2 @@
+symbol,volatility,trend_strength,noise,MA_Type,MA_Pair,Return,Volatility,WinRate,Sharpe,MaxDrawdown,Trades
+IOB.NS,1.66,6.2,77.02,SMA,10/20,-9.002178550706896,5.453465471888028,0.3333333333333333,-2.7368540535465513,-7.851523648592718,6

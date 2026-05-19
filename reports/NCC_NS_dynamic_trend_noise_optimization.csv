@@ -1,0 +1,2 @@
+symbol,volatility,trend_strength,noise,MA_Type,MA_Pair,Return,Volatility,WinRate,Sharpe,MaxDrawdown,Trades
+NCC.NS,2.12,6.96,77.88,SMA,10/20,1.2508762928343131,8.839454349945083,0.4,-0.5144139630035411,-5.505801515992436,5

@@ -1,0 +1,2 @@
+symbol,MarketSigma,trend_strength,noise,MA_Type,MA_Pair,Return,StrategyAggr,WinRate,Sharpe,MaxDrawdown,Trades
+TBOTEK.NS,1.78,15.17,52.09,EMA,10/20,-1.7072550270655351,8.116917825922341,0.3333333333333333,-0.6525094442479636,-6.424686697765325,6

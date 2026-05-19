@@ -1,0 +1,2 @@
+symbol,volatility,trend_strength,noise,MA_Type,MA_Pair,Return,Volatility,WinRate,Sharpe,MaxDrawdown,Trades
+HINDALCO.NS,2.65,4.62,88.95,SMA,10/20,6.934984077977213,8.380839661378312,0.6,0.08238028428559785,-5.379628478222431,5

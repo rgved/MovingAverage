@@ -1,0 +1,2 @@
+symbol,volatility,trend_strength,noise,MA_Type,MA_Pair,Return,Volatility,WinRate,Sharpe,MaxDrawdown,Trades
+BAJAJHFL.NS,1.3,7.95,63.75,EMA,10/20,-9.379362725681784,4.769808328526907,0.16666666666666666,-2.7355997753375787,-7.603921852320717,6

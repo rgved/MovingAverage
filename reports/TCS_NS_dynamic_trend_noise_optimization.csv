@@ -1,0 +1,2 @@
+symbol,volatility,trend_strength,noise,MA_Type,MA_Pair,Return,Volatility,WinRate,Sharpe,MaxDrawdown,Trades
+TCS.NS,2.0,8.3,69.35,EMA,10/20,-1.6256294605496824,6.265946983307666,0.4,-1.386242554325867,-6.862606871120491,5

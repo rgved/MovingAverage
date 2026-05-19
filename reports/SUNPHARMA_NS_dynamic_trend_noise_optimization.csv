@@ -1,0 +1,2 @@
+symbol,volatility,trend_strength,noise,MA_Type,MA_Pair,Return,Volatility,WinRate,Sharpe,MaxDrawdown,Trades
+SUNPHARMA.NS,1.66,2.01,91.15,SMA,10/20,-2.8412647144202663,7.788507729437912,0.4,-0.4452367153709726,-5.03389619867427,5

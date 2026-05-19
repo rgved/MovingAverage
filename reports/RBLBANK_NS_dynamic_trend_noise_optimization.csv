@@ -1,0 +1,2 @@
+symbol,volatility,trend_strength,noise,MA_Type,MA_Pair,Return,Volatility,WinRate,Sharpe,MaxDrawdown,Trades
+RBLBANK.NS,2.38,1.24,96.39,SMA,10/20,2.353182948905297,9.073176405436055,0.6,-0.3252019731526624,-4.202898550724676,5

@@ -1,0 +1,2 @@
+symbol,MarketSigma,trend_strength,noise,MA_Type,MA_Pair,Return,StrategyAggr,WinRate,Sharpe,MaxDrawdown,Trades
+VBL.NS,2.11,5.44,82.33,SMA,10/20,-2.7907593159387623,6.057656104803694,0.5,-1.083023496014737,-4.021794859539529,6

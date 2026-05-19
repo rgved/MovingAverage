@@ -1,0 +1,2 @@
+symbol,volatility,trend_strength,noise,MA_Type,MA_Pair,Return,Volatility,WinRate,Sharpe,MaxDrawdown,Trades
+ZENSARTECH.NS,2.02,5.27,83.76,SMA,10/20,-4.545974422829979,7.828705272107802,0.4,-0.9748454579212311,-6.465111795306977,5

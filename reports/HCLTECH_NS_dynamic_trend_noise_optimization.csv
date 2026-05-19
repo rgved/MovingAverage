@@ -1,0 +1,2 @@
+symbol,volatility,trend_strength,noise,MA_Type,MA_Pair,Return,Volatility,WinRate,Sharpe,MaxDrawdown,Trades
+HCLTECH.NS,1.41,4.07,80.41,SMA,10/20,5.619226154073176,8.469507792228931,0.5,-0.3244388438835724,-2.9353939509308535,6

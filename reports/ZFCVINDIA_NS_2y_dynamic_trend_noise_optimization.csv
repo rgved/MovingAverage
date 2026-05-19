@@ -1,0 +1,2 @@
+symbol,MarketSigma,trend_strength,noise,MA_Type,MA_Pair,Return,StrategyAggr,WinRate,Sharpe,MaxDrawdown,Trades
+ZFCVINDIA.NS,2.02,0.63,97.96,SMA,10/20,-1.2568913239808355,5.993674023239968,0.4,-0.9268946287796149,-6.4074638340291585,5

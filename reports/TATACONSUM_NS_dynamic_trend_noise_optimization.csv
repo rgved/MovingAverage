@@ -1,0 +1,2 @@
+symbol,volatility,trend_strength,noise,MA_Type,MA_Pair,Return,Volatility,WinRate,Sharpe,MaxDrawdown,Trades
+TATACONSUM.NS,2.24,1.41,96.02,SMA,10/20,4.408976498541706,9.288865463122614,0.6,-0.3370914401368014,-4.040903842982003,5

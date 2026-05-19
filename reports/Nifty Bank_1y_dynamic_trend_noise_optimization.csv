@@ -1,0 +1,2 @@
+symbol,MarketSigma,trend_strength,noise,MA_Type,MA_Pair,Return,StrategyAggr,WinRate,Sharpe,MaxDrawdown,Trades
+Nifty Bank,0.98,1.47,90.1,SMA,10/20,-1.2664878873933194,5.961198269249817,0.4,-0.00456151727911421,-4.339133469277135,5

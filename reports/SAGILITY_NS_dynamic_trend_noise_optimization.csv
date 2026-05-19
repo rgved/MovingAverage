@@ -1,0 +1,2 @@
+symbol,volatility,trend_strength,noise,MA_Type,MA_Pair,Return,Volatility,WinRate,Sharpe,MaxDrawdown,Trades
+SAGILITY.NS,2.08,6.23,80.96,SMA,10/20,7.346132144002815,7.3289891414156525,0.5,-0.23341015300512022,-3.5820895522387985,8

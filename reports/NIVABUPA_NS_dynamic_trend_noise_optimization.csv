@@ -1,0 +1,2 @@
+symbol,volatility,trend_strength,noise,MA_Type,MA_Pair,Return,Volatility,WinRate,Sharpe,MaxDrawdown,Trades
+NIVABUPA.NS,1.44,6.04,70.69,EMA,10/20,-3.6100891217295095,10.11638614593149,0.2857142857142857,-0.5172251594752785,-6.475906024748168,7

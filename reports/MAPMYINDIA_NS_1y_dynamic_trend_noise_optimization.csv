@@ -1,0 +1,2 @@
+symbol,MarketSigma,trend_strength,noise,MA_Type,MA_Pair,Return,StrategyAggr,WinRate,Sharpe,MaxDrawdown,Trades
+MAPMYINDIA.NS,1.96,27.77,36.75,EMA,10/20,-10.690113364687704,10.654630051794648,0.2,-1.324885851867947,-10.564037061889609,5

@@ -1,0 +1,2 @@
+symbol,MarketSigma,trend_strength,noise,MA_Type,MA_Pair,Return,StrategyAggr,WinRate,Sharpe,MaxDrawdown,Trades
+UBL.NS,0.93,9.6,40.04,EMA,10/20,-11.615236836714582,3.4356134753979894,0.0,-3.1269605190247063,-4.061409780634884,5

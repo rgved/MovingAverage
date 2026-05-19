@@ -1,0 +1,2 @@
+symbol,volatility,trend_strength,noise,MA_Type,MA_Pair,Return,Volatility,WinRate,Sharpe,MaxDrawdown,Trades
+DEEPAKNTR.NS,1.94,1.37,95.47,SMA,10/20,-2.6827209552050313,6.421517333218726,0.3333333333333333,-0.8961061684423997,-5.544764918967671,6

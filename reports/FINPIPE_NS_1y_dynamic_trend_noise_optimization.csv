@@ -1,0 +1,2 @@
+symbol,MarketSigma,trend_strength,noise,MA_Type,MA_Pair,Return,StrategyAggr,WinRate,Sharpe,MaxDrawdown,Trades
+FINPIPE.NS,1.3,4.7,77.12,SMA,10/20,-5.073872682671032,5.863886236811395,0.4,-1.2716015776527256,-7.925702770822484,5

@@ -1,0 +1,2 @@
+symbol,MarketSigma,trend_strength,noise,MA_Type,MA_Pair,Return,StrategyAggr,WinRate,Sharpe,MaxDrawdown,Trades
+CIPLA.NS,2.53,15.72,51.48,EMA,10/20,1.9708591970210243,7.722832319958563,0.5,-0.4369880843067133,-4.108962633916901,6

@@ -1,0 +1,2 @@
+symbol,volatility,trend_strength,noise,MA_Type,MA_Pair,Return,Volatility,WinRate,Sharpe,MaxDrawdown,Trades
+DLF.NS,2.41,1.07,97.18,SMA,10/20,-15.208211929461513,8.052310458737068,0.0,-1.96971985491226,-10.642824318929623,6

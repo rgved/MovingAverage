@@ -1,0 +1,2 @@
+symbol,volatility,trend_strength,noise,MA_Type,MA_Pair,Return,Volatility,WinRate,Sharpe,MaxDrawdown,Trades
+INDIGO.NS,2.28,1.35,95.79,SMA,10/20,-9.221045847185504,9.35906653085223,0.2857142857142857,-1.204503207795021,-6.210104286983931,7

@@ -1,0 +1,2 @@
+symbol,volatility,trend_strength,noise,MA_Type,MA_Pair,Return,Volatility,WinRate,Sharpe,MaxDrawdown,Trades
+COFORGE.NS,2.22,8.06,77.28,SMA,10/20,-9.007219123861244,6.674098678139038,0.16666666666666666,-1.2098875641620441,-6.030144668116821,6

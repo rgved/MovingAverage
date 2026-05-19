@@ -1,0 +1,2 @@
+symbol,volatility,trend_strength,noise,MA_Type,MA_Pair,Return,Volatility,WinRate,Sharpe,MaxDrawdown,Trades
+METROPOLIS.NS,1.88,3.46,87.28,SMA,10/20,-6.205249853824624,5.789926551380133,0.2,-1.8062900170408247,-7.2782256487895385,5

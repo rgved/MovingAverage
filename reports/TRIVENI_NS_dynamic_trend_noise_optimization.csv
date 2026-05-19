@@ -1,0 +1,2 @@
+symbol,volatility,trend_strength,noise,MA_Type,MA_Pair,Return,Volatility,WinRate,Sharpe,MaxDrawdown,Trades
+TRIVENI.NS,2.79,4.22,90.14,SMA,12/26,16.580396184565593,8.124692942048366,0.8,0.8998992395452585,-1.7041486241095027,5

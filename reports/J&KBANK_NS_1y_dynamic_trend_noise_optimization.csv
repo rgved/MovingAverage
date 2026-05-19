@@ -1,0 +1,2 @@
+symbol,MarketSigma,trend_strength,noise,MA_Type,MA_Pair,Return,StrategyAggr,WinRate,Sharpe,MaxDrawdown,Trades
+J&KBANK.NS,2.04,1.55,94.73,SMA,10/20,-3.9629606919944993,9.700932113545646,0.2857142857142857,-0.817886953829295,-9.579374867137002,7

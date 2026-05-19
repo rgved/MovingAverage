@@ -1,0 +1,2 @@
+symbol,volatility,trend_strength,noise,MA_Type,MA_Pair,Return,Volatility,WinRate,Sharpe,MaxDrawdown,Trades
+JINDALSAW.NS,4.43,2.46,95.44,SMA,10/20,-4.518084841821091,10.049404534028291,0.3333333333333333,-0.861727232975834,-8.102944613435348,6

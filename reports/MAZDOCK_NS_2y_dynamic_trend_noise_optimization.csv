@@ -1,0 +1,2 @@
+symbol,MarketSigma,trend_strength,noise,MA_Type,MA_Pair,Return,StrategyAggr,WinRate,Sharpe,MaxDrawdown,Trades
+MAZDOCK.NS,2.79,3.47,90.59,SMA,10/20,-7.460416344091081,6.737289539894639,0.2,-1.4224365856682901,-5.33605007493213,5

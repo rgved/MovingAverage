@@ -1,0 +1,2 @@
+symbol,volatility,trend_strength,noise,MA_Type,MA_Pair,Return,Volatility,WinRate,Sharpe,MaxDrawdown,Trades
+NATIONALUM.NS,4.27,1.9,97.17,SMA,10/20,-6.401455831752944,5.3028141052050515,0.2,-1.816317202021371,-5.388018843255249,5

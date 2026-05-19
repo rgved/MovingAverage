@@ -1,0 +1,2 @@
+symbol,MarketSigma,trend_strength,noise,MA_Type,MA_Pair,Return,StrategyAggr,WinRate,Sharpe,MaxDrawdown,Trades
+DELHIVERY.NS,1.88,3.45,87.23,SMA,10/20,-4.113252258526967,5.882150940151421,0.3333333333333333,-1.5194479331573847,-7.343117499005947,6

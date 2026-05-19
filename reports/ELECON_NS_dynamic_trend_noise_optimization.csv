@@ -1,0 +1,2 @@
+symbol,volatility,trend_strength,noise,MA_Type,MA_Pair,Return,Volatility,WinRate,Sharpe,MaxDrawdown,Trades
+ELECON.NS,4.65,19.26,69.06,EMA,10/20,-16.782893967320366,6.712946946193317,0.16666666666666666,-1.6812689046657592,-7.490499877141432,6

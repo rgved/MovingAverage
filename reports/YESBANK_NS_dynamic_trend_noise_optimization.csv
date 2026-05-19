@@ -1,0 +1,2 @@
+symbol,volatility,trend_strength,noise,MA_Type,MA_Pair,Return,Volatility,WinRate,Sharpe,MaxDrawdown,Trades
+YESBANK.NS,1.72,6.79,72.06,EMA,10/20,-6.794811248037014,9.663906137651395,0.2,-0.6993907948690155,-4.233983286908072,5

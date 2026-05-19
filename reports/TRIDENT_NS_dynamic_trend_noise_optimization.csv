@@ -1,0 +1,2 @@
+symbol,volatility,trend_strength,noise,MA_Type,MA_Pair,Return,Volatility,WinRate,Sharpe,MaxDrawdown,Trades
+TRIDENT.NS,2.31,4.3,87.26,SMA,10/20,-5.312555503787553,4.865906705131039,0.16666666666666666,-2.018612620832088,-6.611588765063425,6

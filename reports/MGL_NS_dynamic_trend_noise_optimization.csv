@@ -1,0 +1,2 @@
+symbol,volatility,trend_strength,noise,MA_Type,MA_Pair,Return,Volatility,WinRate,Sharpe,MaxDrawdown,Trades
+MGL.NS,2.45,8.88,72.58,EMA,10/20,-18.900852325545625,8.911226719267667,0.125,-1.982037782524343,-12.833109932957088,8

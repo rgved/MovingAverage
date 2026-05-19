@@ -1,0 +1,2 @@
+symbol,volatility,trend_strength,noise,MA_Type,MA_Pair,Return,Volatility,WinRate,Sharpe,MaxDrawdown,Trades
+BEML.NS,3.19,7.96,81.95,SMA,10/20,3.5885566655100343,11.010091666704346,0.4,0.11993961940530824,-4.708726467507929,5

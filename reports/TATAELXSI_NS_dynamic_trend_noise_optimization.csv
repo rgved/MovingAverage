@@ -1,0 +1,2 @@
+symbol,volatility,trend_strength,noise,MA_Type,MA_Pair,Return,Volatility,WinRate,Sharpe,MaxDrawdown,Trades
+TATAELXSI.NS,1.9,8.65,68.94,EMA,10/20,-12.92304767755933,6.2069355489225995,0.0,-3.2314278928185876,-12.491016032608815,6

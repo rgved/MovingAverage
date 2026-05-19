@@ -1,0 +1,2 @@
+symbol,MarketSigma,trend_strength,noise,MA_Type,MA_Pair,Return,StrategyAggr,WinRate,Sharpe,MaxDrawdown,Trades
+SIEMENS.NS,2.12,5.01,83.02,SMA,10/20,9.142052446067783,8.253318511247167,0.8,0.7328631384539808,-4.666583260352796,5

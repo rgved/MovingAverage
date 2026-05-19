@@ -1,0 +1,2 @@
+symbol,volatility,trend_strength,noise,MA_Type,MA_Pair,Return,Volatility,WinRate,Sharpe,MaxDrawdown,Trades
+ABBOTINDIA.NS,1.43,2.6,87.42,SMA,10/20,-6.295099660159309,7.4075160206717925,0.2,-1.6165791196693944,-6.72159374375747,5

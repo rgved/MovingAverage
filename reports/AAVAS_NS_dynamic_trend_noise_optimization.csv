@@ -1,0 +1,2 @@
+symbol,volatility,trend_strength,noise,MA_Type,MA_Pair,Return,Volatility,WinRate,Sharpe,MaxDrawdown,Trades
+AAVAS.NS,1.56,0.55,97.12,SMA,10/20,-1.5158672094928494,5.192893586212077,0.4,-1.8141969319235531,-5.298235141548979,5

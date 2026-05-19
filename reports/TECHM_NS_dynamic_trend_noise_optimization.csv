@@ -1,0 +1,2 @@
+symbol,volatility,trend_strength,noise,MA_Type,MA_Pair,Return,Volatility,WinRate,Sharpe,MaxDrawdown,Trades
+TECHM.NS,2.04,2.38,91.81,SMA,10/20,3.6498619560348944,8.003560327554407,0.5714285714285714,0.13364310218498365,-8.127618726551965,7

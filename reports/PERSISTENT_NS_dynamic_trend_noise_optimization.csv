@@ -1,0 +1,2 @@
+symbol,volatility,trend_strength,noise,MA_Type,MA_Pair,Return,Volatility,WinRate,Sharpe,MaxDrawdown,Trades
+PERSISTENT.NS,1.8,8.8,68.6,EMA,10/20,-8.414333025312803,8.418232578230453,0.2857142857142857,-1.7279263518641423,-9.413285194139576,7

@@ -1,0 +1,2 @@
+symbol,volatility,trend_strength,noise,MA_Type,MA_Pair,Return,Volatility,WinRate,Sharpe,MaxDrawdown,Trades
+LT.NS,1.77,1.07,95.76,SMA,12/26,-1.3953664598886362,7.001059566583287,0.4,-0.8899706388196991,-4.598995096152136,5

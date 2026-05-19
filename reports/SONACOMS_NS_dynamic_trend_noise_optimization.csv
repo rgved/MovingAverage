@@ -1,0 +1,2 @@
+symbol,volatility,trend_strength,noise,MA_Type,MA_Pair,Return,Volatility,WinRate,Sharpe,MaxDrawdown,Trades
+SONACOMS.NS,2.41,3.76,87.92,SMA,10/20,-3.1297187292462003,9.973943497151456,0.3333333333333333,-0.7392431829068804,-8.436099707617794,6

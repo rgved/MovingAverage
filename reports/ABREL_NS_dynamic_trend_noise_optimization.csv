@@ -1,0 +1,2 @@
+symbol,volatility,trend_strength,noise,MA_Type,MA_Pair,Return,Volatility,WinRate,Sharpe,MaxDrawdown,Trades
+ABREL.NS,2.2,29.8,30.49,EMA,10/20,-2.8943289624322355,5.617849944302756,0.2857142857142857,-1.4233412173947322,-3.6914982721445666,7

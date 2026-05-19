@@ -1,0 +1,2 @@
+symbol,MarketSigma,trend_strength,noise,MA_Type,MA_Pair,Return,StrategyAggr,WinRate,Sharpe,MaxDrawdown,Trades
+BASF.NS,1.31,8.3,60.13,EMA,10/20,-4.283317573468571,10.079072490607697,0.125,-0.9692676135937567,-9.466634929193818,8

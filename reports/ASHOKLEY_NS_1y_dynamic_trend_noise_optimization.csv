@@ -1,0 +1,2 @@
+symbol,MarketSigma,trend_strength,noise,MA_Type,MA_Pair,Return,StrategyAggr,WinRate,Sharpe,MaxDrawdown,Trades
+ASHOKLEY.NS,2.09,14.42,55.75,EMA,10/20,-2.546358659644754,7.801053200713117,0.2,-0.8925778093186832,-5.951983853329812,5

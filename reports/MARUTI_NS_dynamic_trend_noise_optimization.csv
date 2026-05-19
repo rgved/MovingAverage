@@ -1,0 +1,2 @@
+symbol,volatility,trend_strength,noise,MA_Type,MA_Pair,Return,Volatility,WinRate,Sharpe,MaxDrawdown,Trades
+MARUTI.NS,1.62,9.11,68.16,EMA,10/20,0.8597936642726678,5.487067554310213,0.4,-1.0249239890310762,-5.027947803853483,5

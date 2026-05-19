@@ -1,0 +1,2 @@
+symbol,volatility,trend_strength,noise,MA_Type,MA_Pair,Return,Volatility,WinRate,Sharpe,MaxDrawdown,Trades
+TORNTPOWER.NS,2.56,8.15,80.31,SMA,10/20,-1.5631990928540396,6.714889573740834,0.2,-0.6961674770152699,-6.063786549189809,5

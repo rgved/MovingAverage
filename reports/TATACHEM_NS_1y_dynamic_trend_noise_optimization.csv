@@ -1,0 +1,2 @@
+symbol,MarketSigma,trend_strength,noise,MA_Type,MA_Pair,Return,StrategyAggr,WinRate,Sharpe,MaxDrawdown,Trades
+TATACHEM.NS,3.05,3.2,91.08,SMA,10/20,-5.02831710515429,5.877646412815476,0.4,-1.831770075340698,-5.9010308746165085,5

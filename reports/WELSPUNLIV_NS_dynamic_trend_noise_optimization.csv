@@ -1,0 +1,2 @@
+symbol,volatility,trend_strength,noise,MA_Type,MA_Pair,Return,Volatility,WinRate,Sharpe,MaxDrawdown,Trades
+WELSPUNLIV.NS,3.04,7.04,84.99,SMA,12/26,1.3237320245654383,8.908928966625691,0.4,0.45826899033071733,-4.331478417807166,5

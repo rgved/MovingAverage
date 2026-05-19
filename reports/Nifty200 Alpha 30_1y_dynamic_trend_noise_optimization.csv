@@ -1,0 +1,2 @@
+symbol,MarketSigma,trend_strength,noise,MA_Type,MA_Pair,Return,StrategyAggr,WinRate,Sharpe,MaxDrawdown,Trades
+Nifty200 Alpha 30,1.49,0.88,96.02,SMA,10/20,-13.698034493762945,6.012175404206576,0.0,-2.729998613223966,-10.587415614973072,7

@@ -1,0 +1,2 @@
+symbol,volatility,trend_strength,noise,MA_Type,MA_Pair,Return,Volatility,WinRate,Sharpe,MaxDrawdown,Trades
+GLENMARK.NS,1.72,3.61,86.15,SMA,10/20,5.299091513526544,7.515230620915093,0.5,0.6620134870847862,-3.6867446752372635,6

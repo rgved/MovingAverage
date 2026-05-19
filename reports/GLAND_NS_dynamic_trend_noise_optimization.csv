@@ -1,0 +1,2 @@
+symbol,volatility,trend_strength,noise,MA_Type,MA_Pair,Return,Volatility,WinRate,Sharpe,MaxDrawdown,Trades
+GLAND.NS,2.19,10.14,69.01,EMA,10/20,-4.757827492519628,7.0001260658084234,0.4,-0.601415593828329,-5.219250543800669,5

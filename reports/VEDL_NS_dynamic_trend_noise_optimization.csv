@@ -1,0 +1,2 @@
+symbol,volatility,trend_strength,noise,MA_Type,MA_Pair,Return,Volatility,WinRate,Sharpe,MaxDrawdown,Trades
+VEDL.NS,3.74,10.04,81.61,SMA,10/20,-4.987247243683257,7.421682452356813,0.4,-0.38498771950842947,-2.9676161594281436,5

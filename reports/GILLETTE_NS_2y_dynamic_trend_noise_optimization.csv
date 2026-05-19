@@ -1,0 +1,2 @@
+symbol,MarketSigma,trend_strength,noise,MA_Type,MA_Pair,Return,StrategyAggr,WinRate,Sharpe,MaxDrawdown,Trades
+GILLETTE.NS,2.26,5.92,80.85,SMA,10/20,-9.312064614106074,4.972408711443236,0.2,-2.7457024417824316,-7.128492023877109,5

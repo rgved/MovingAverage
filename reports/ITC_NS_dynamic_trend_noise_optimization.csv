@@ -1,0 +1,2 @@
+symbol,volatility,trend_strength,noise,MA_Type,MA_Pair,Return,Volatility,WinRate,Sharpe,MaxDrawdown,Trades
+ITC.NS,1.8,3.37,87.04,SMA,10/20,-13.720457408749631,4.5578344674414994,0.0,-2.931462634403053,-7.941234745218539,5

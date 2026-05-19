@@ -1,0 +1,2 @@
+symbol,MarketSigma,trend_strength,noise,MA_Type,MA_Pair,Return,StrategyAggr,WinRate,Sharpe,MaxDrawdown,Trades
+TATAELXSI.NS,2.14,10.67,64.5,EMA,10/20,-5.852815854918802,6.330487349176139,0.16666666666666666,-1.615130559061295,-11.21163346114027,6

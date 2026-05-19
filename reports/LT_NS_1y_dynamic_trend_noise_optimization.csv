@@ -1,0 +1,2 @@
+symbol,MarketSigma,trend_strength,noise,MA_Type,MA_Pair,Return,StrategyAggr,WinRate,Sharpe,MaxDrawdown,Trades
+LT.NS,1.21,3.87,81.34,SMA,12/26,-0.14833271620001698,8.644635372685594,0.4,-0.1273373893132133,-4.125944175217255,5

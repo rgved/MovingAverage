@@ -1,0 +1,2 @@
+symbol,volatility,trend_strength,noise,MA_Type,MA_Pair,Return,Volatility,WinRate,Sharpe,MaxDrawdown,Trades
+CESC.NS,2.09,6.99,80.95,SMA,10/20,1.0548733817044242,8.264946814214891,0.4,-0.18994054369751603,-4.7976632845542655,5

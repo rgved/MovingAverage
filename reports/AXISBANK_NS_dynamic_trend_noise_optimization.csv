@@ -1,0 +1,2 @@
+symbol,volatility,trend_strength,noise,MA_Type,MA_Pair,Return,Volatility,WinRate,Sharpe,MaxDrawdown,Trades
+AXISBANK.NS,2.02,5.47,82.42,SMA,10/20,-7.272655452230148,6.473931993435479,0.14285714285714285,-1.7812934611217606,-6.722920496063789,7

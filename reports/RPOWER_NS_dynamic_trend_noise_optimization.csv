@@ -1,0 +1,2 @@
+symbol,volatility,trend_strength,noise,MA_Type,MA_Pair,Return,Volatility,WinRate,Sharpe,MaxDrawdown,Trades
+RPOWER.NS,2.82,25.19,48.41,EMA,10/20,-5.585281870441239,9.578628967180668,0.4,-0.6889407523742151,-7.367178711711864,5

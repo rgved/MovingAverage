@@ -1,0 +1,2 @@
+symbol,MarketSigma,trend_strength,noise,MA_Type,MA_Pair,Return,StrategyAggr,WinRate,Sharpe,MaxDrawdown,Trades
+PHOENIXLTD.NS,1.63,4.56,81.39,SMA,12/26,3.2748716389169985,6.755684549382781,0.6,-0.6425654928875763,-3.2239377163268523,5

@@ -1,0 +1,2 @@
+symbol,MarketSigma,trend_strength,noise,MA_Type,MA_Pair,Return,StrategyAggr,WinRate,Sharpe,MaxDrawdown,Trades
+COLPAL.NS,1.36,2.12,89.63,SMA,10/20,-4.691797684663701,8.482320224836885,0.2,-1.301957098381983,-11.042747826473088,5

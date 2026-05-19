@@ -1,0 +1,2 @@
+symbol,MarketSigma,trend_strength,noise,MA_Type,MA_Pair,Return,StrategyAggr,WinRate,Sharpe,MaxDrawdown,Trades
+ASAHIINDIA.NS,2.78,2.07,95.52,SMA,12/26,4.089271566452002,8.083930422092655,0.8,-0.2405750368046004,-3.8509170254172442,5

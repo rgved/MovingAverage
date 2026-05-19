@@ -1,0 +1,2 @@
+symbol,volatility,trend_strength,noise,MA_Type,MA_Pair,Return,Volatility,WinRate,Sharpe,MaxDrawdown,Trades
+PVRINOX.NS,2.65,0.21,99.54,SMA,12/26,5.058534834561601,6.1565010117460615,0.6,-0.0032719802366379435,-2.7889751751717706,5

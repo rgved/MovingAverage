@@ -1,0 +1,2 @@
+symbol,volatility,trend_strength,noise,MA_Type,MA_Pair,Return,Volatility,WinRate,Sharpe,MaxDrawdown,Trades
+KIRLOSBROS.NS,2.37,7.33,79.39,SMA,12/26,-11.998238644100567,5.160290852761622,0.4,-1.230129859165154,-3.391241027774883,5

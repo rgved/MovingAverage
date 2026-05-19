@@ -1,0 +1,2 @@
+symbol,volatility,trend_strength,noise,MA_Type,MA_Pair,Return,Volatility,WinRate,Sharpe,MaxDrawdown,Trades
+Nifty FMCG,1.08,1.06,93.97,SMA,10/20,-5.37869923145009,5.863475048043258,0.3333333333333333,-1.4689413503133728,-7.495976873377641,6

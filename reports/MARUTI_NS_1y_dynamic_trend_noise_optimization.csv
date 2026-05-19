@@ -1,0 +1,2 @@
+symbol,MarketSigma,trend_strength,noise,MA_Type,MA_Pair,Return,StrategyAggr,WinRate,Sharpe,MaxDrawdown,Trades
+MARUTI.NS,1.48,3.31,86.09,SMA,10/20,5.0257996909247815,8.844649279450923,0.4,-1.0530854382199475,-8.767121888611884,5

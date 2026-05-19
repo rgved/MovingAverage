@@ -1,0 +1,2 @@
+symbol,volatility,trend_strength,noise,MA_Type,MA_Pair,Return,Volatility,WinRate,Sharpe,MaxDrawdown,Trades
+LALPATHLAB.NS,1.62,1.78,93.15,SMA,10/20,-4.722329558461524,6.067063494717838,0.375,-1.426024003621877,-3.6600616693800547,8

@@ -1,0 +1,2 @@
+symbol,volatility,trend_strength,noise,MA_Type,MA_Pair,Return,Volatility,WinRate,Sharpe,MaxDrawdown,Trades
+CERA.NS,1.24,3.12,83.99,SMA,10/20,-2.9034243649738167,6.427845241293542,0.4,-1.7131015229661886,-5.704016891750041,5

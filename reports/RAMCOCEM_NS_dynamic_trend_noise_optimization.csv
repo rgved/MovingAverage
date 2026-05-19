@@ -1,0 +1,2 @@
+symbol,volatility,trend_strength,noise,MA_Type,MA_Pair,Return,Volatility,WinRate,Sharpe,MaxDrawdown,Trades
+RAMCOCEM.NS,1.65,6.13,77.11,SMA,10/20,-5.3413131184710805,5.974578972038291,0.42857142857142855,-1.4303125445837461,-7.841543411645279,7

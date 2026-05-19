@@ -1,0 +1,2 @@
+symbol,volatility,trend_strength,noise,MA_Type,MA_Pair,Return,Volatility,WinRate,Sharpe,MaxDrawdown,Trades
+KOTAKBANK.NS,1.42,0.72,96.47,SMA,10/20,-3.3580562183297524,6.359219456768105,0.4,-1.2217305130657332,-4.102795311091079,5

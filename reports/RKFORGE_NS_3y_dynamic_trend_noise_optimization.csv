@@ -1,0 +1,2 @@
+symbol,MarketSigma,trend_strength,noise,MA_Type,MA_Pair,Return,StrategyAggr,WinRate,Sharpe,MaxDrawdown,Trades
+RKFORGE.NS,1.66,3.38,87.23,SMA,10/20,-13.209406599094253,5.1176599796602895,0.0,-3.502496939472403,-10.496854312341242,5

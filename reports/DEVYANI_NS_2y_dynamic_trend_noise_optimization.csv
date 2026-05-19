@@ -1,0 +1,2 @@
+symbol,MarketSigma,trend_strength,noise,MA_Type,MA_Pair,Return,StrategyAggr,WinRate,Sharpe,MaxDrawdown,Trades
+DEVYANI.NS,2.28,17.13,58.09,EMA,10/20,1.3405584471530174,4.589243440164961,0.4,-1.963675530079621,-4.130073013430069,5

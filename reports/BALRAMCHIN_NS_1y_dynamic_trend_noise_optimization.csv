@@ -1,0 +1,2 @@
+symbol,MarketSigma,trend_strength,noise,MA_Type,MA_Pair,Return,StrategyAggr,WinRate,Sharpe,MaxDrawdown,Trades
+BALRAMCHIN.NS,2.16,6.34,77.86,SMA,10/20,-2.7333848866263666,3.6439409168906387,0.2,-2.419898903612824,-4.219713856757923,5

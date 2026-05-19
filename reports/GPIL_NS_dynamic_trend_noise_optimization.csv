@@ -1,0 +1,2 @@
+symbol,volatility,trend_strength,noise,MA_Type,MA_Pair,Return,Volatility,WinRate,Sharpe,MaxDrawdown,Trades
+GPIL.NS,2.66,9.32,79.68,SMA,12/26,6.105182312445523,9.730804288724801,0.8,0.09080818327803611,-4.740711106665996,5

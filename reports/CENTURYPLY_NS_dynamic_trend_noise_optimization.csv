@@ -1,0 +1,2 @@
+symbol,volatility,trend_strength,noise,MA_Type,MA_Pair,Return,Volatility,WinRate,Sharpe,MaxDrawdown,Trades
+CENTURYPLY.NS,2.64,0.68,98.24,SMA,12/26,-0.7037077827492744,3.826836582816094,0.6,-1.3339590827370207,-1.8172640080767466,5

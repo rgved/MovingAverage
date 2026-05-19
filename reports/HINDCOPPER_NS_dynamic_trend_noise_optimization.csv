@@ -1,0 +1,2 @@
+symbol,volatility,trend_strength,noise,MA_Type,MA_Pair,Return,Volatility,WinRate,Sharpe,MaxDrawdown,Trades
+HINDCOPPER.NS,7.17,11.34,88.4,SMA,10/20,-0.9846628316572237,4.883070767927336,0.5,-1.254218271429102,-4.2891094464785,6

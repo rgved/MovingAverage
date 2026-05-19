@@ -1,0 +1,2 @@
+symbol,MarketSigma,trend_strength,noise,MA_Type,MA_Pair,Return,StrategyAggr,WinRate,Sharpe,MaxDrawdown,Trades
+MEDANTA.NS,2.56,7.86,82.15,SMA,10/20,-1.7225589516370654,10.160040662390369,0.4,-0.5577000685366339,-6.128381106176817,5

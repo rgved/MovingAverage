@@ -1,0 +1,2 @@
+symbol,volatility,trend_strength,noise,MA_Type,MA_Pair,Return,Volatility,WinRate,Sharpe,MaxDrawdown,Trades
+SYRMA.NS,3.3,2.55,93.8,SMA,10/20,4.5194217440979845,9.64392731628787,0.5555555555555556,-0.05962596472062052,-6.231600962703654,9

@@ -1,0 +1,2 @@
+symbol,MarketSigma,trend_strength,noise,MA_Type,MA_Pair,Return,StrategyAggr,WinRate,Sharpe,MaxDrawdown,Trades
+POWERINDIA.NS,3.37,0.14,99.76,SMA,10/20,10.547124705106281,7.9893900307962635,1.0,1.2064521021479453,-1.2220755731534472,5

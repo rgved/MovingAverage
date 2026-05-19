@@ -1,0 +1,2 @@
+symbol,MarketSigma,trend_strength,noise,MA_Type,MA_Pair,Return,StrategyAggr,WinRate,Sharpe,MaxDrawdown,Trades
+GRAVITA.NS,2.89,10.62,77.58,SMA,10/20,-0.7257764172425518,4.730561151762178,0.2,-1.2682534823306315,-2.5636179222941036,5

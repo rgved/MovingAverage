@@ -1,0 +1,2 @@
+symbol,MarketSigma,trend_strength,noise,MA_Type,MA_Pair,Return,StrategyAggr,WinRate,Sharpe,MaxDrawdown,Trades
+CESC.NS,2.51,1.38,96.02,SMA,10/20,3.594488803644147,9.30141973942321,0.3333333333333333,0.2690026369298669,-4.797663284554233,6

@@ -1,0 +1,2 @@
+symbol,volatility,trend_strength,noise,MA_Type,MA_Pair,Return,Volatility,WinRate,Sharpe,MaxDrawdown,Trades
+MAHSCOOTER.NS,2.59,7.26,81.41,SMA,10/20,-6.492573737247231,4.92658387597029,0.14285714285714285,-2.0697045322960856,-6.114550000443986,7

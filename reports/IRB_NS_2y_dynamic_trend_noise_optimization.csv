@@ -1,0 +1,2 @@
+symbol,MarketSigma,trend_strength,noise,MA_Type,MA_Pair,Return,StrategyAggr,WinRate,Sharpe,MaxDrawdown,Trades
+IRB.NS,1.81,2.63,91.22,SMA,10/20,-7.436675739516563,5.340221817068742,0.16666666666666666,-1.979622016699404,-6.587624639004785,6

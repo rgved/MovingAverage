@@ -1,0 +1,2 @@
+symbol,MarketSigma,trend_strength,noise,MA_Type,MA_Pair,Return,StrategyAggr,WinRate,Sharpe,MaxDrawdown,Trades
+RHIM.NS,3.19,10.32,80.76,SMA,12/26,-7.909954407883868,4.906273431948114,0.3333333333333333,-1.815768469986419,-5.579507160347674,6

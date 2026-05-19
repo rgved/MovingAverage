@@ -1,0 +1,2 @@
+symbol,volatility,trend_strength,noise,MA_Type,MA_Pair,Return,Volatility,WinRate,Sharpe,MaxDrawdown,Trades
+SBICARD.NS,1.58,12.38,53.67,EMA,10/20,-3.506335651552228,4.104032864331651,0.4,-1.8575463119446487,-3.1622768473158036,5

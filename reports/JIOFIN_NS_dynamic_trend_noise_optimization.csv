@@ -1,0 +1,2 @@
+symbol,volatility,trend_strength,noise,MA_Type,MA_Pair,Return,Volatility,WinRate,Sharpe,MaxDrawdown,Trades
+JIOFIN.NS,2.67,6.67,81.24,SMA,10/20,-8.930917380866099,6.46910957936226,0.2857142857142857,-1.6072544682812435,-8.372331051720128,7

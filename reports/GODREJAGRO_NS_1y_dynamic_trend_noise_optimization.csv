@@ -1,0 +1,2 @@
+symbol,MarketSigma,trend_strength,noise,MA_Type,MA_Pair,Return,StrategyAggr,WinRate,Sharpe,MaxDrawdown,Trades
+GODREJAGRO.NS,2.37,2.86,92.21,SMA,10/20,-2.015400919412913,5.533489751765392,0.4,-1.0445915721789094,-4.616343985124227,5

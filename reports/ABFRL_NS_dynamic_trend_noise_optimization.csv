@@ -1,0 +1,2 @@
+symbol,volatility,trend_strength,noise,MA_Type,MA_Pair,Return,Volatility,WinRate,Sharpe,MaxDrawdown,Trades
+ABFRL.NS,2.98,7.67,84.23,SMA,10/20,-18.26826476383613,9.434569726674512,0.0,-1.9530209922807054,-14.64179102732015,6

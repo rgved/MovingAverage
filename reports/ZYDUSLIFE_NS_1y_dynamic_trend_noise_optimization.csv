@@ -1,0 +1,2 @@
+symbol,MarketSigma,trend_strength,noise,MA_Type,MA_Pair,Return,StrategyAggr,WinRate,Sharpe,MaxDrawdown,Trades
+ZYDUSLIFE.NS,2.09,6.73,78.77,SMA,10/20,1.3850389640490013,12.124521783158169,0.4,-0.06221608432457205,-4.432605221097486,5

@@ -1,0 +1,2 @@
+symbol,volatility,trend_strength,noise,MA_Type,MA_Pair,Return,Volatility,WinRate,Sharpe,MaxDrawdown,Trades
+ICICIGI.NS,1.02,1.82,89.75,SMA,10/20,-3.0095479601571107,8.884068126531748,0.2,-0.9938912421572478,-5.457550243980824,5

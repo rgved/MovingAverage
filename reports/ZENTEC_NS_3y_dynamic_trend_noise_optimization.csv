@@ -1,0 +1,2 @@
+symbol,MarketSigma,trend_strength,noise,MA_Type,MA_Pair,Return,StrategyAggr,WinRate,Sharpe,MaxDrawdown,Trades
+ZENTEC.NS,3.08,1.77,95.86,SMA,10/20,5.8464924985836,13.391255378549364,0.5,0.17877356043167986,-7.143142115505519,6

@@ -1,0 +1,2 @@
+symbol,MarketSigma,trend_strength,noise,MA_Type,MA_Pair,Return,StrategyAggr,WinRate,Sharpe,MaxDrawdown,Trades
+COFORGE.NS,3.77,4.28,91.86,SMA,10/20,-2.0473014449976956,6.106660625432141,0.3333333333333333,-1.2341719301820688,-6.179886341933505,6

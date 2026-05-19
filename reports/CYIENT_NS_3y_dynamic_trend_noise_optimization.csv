@@ -1,0 +1,2 @@
+symbol,MarketSigma,trend_strength,noise,MA_Type,MA_Pair,Return,StrategyAggr,WinRate,Sharpe,MaxDrawdown,Trades
+CYIENT.NS,2.3,2.13,93.81,SMA,10/20,-10.351297926479186,6.740198776057939,0.14285714285714285,-1.6856734637446142,-7.400491312450274,7

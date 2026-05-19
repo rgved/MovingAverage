@@ -1,0 +1,2 @@
+symbol,volatility,trend_strength,noise,MA_Type,MA_Pair,Return,Volatility,WinRate,Sharpe,MaxDrawdown,Trades
+SCHNEIDER.NS,3.92,0.68,98.75,SMA,10/20,11.080718097393527,8.400050091109366,0.8,0.29660183801775114,-4.978267733572839,5

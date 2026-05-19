@@ -1,0 +1,2 @@
+symbol,volatility,trend_strength,noise,MA_Type,MA_Pair,Return,Volatility,WinRate,Sharpe,MaxDrawdown,Trades
+HINDPETRO.NS,2.19,3.21,90.19,SMA,10/20,7.4443301918218685,7.857189625029243,0.6,0.3612866020783397,-5.180030925557755,5

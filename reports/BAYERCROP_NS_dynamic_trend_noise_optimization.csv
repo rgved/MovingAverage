@@ -1,0 +1,2 @@
+symbol,volatility,trend_strength,noise,MA_Type,MA_Pair,Return,Volatility,WinRate,Sharpe,MaxDrawdown,Trades
+BAYERCROP.NS,0.86,3.02,76.99,SMA,10/20,6.410822698423035,5.631035298138596,0.4,-1.2605236351098559,-5.267526587973803,5

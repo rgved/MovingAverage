@@ -1,0 +1,2 @@
+symbol,volatility,trend_strength,noise,MA_Type,MA_Pair,Return,Volatility,WinRate,Sharpe,MaxDrawdown,Trades
+WHIRLPOOL.NS,1.67,1.11,95.52,SMA,10/20,0.12871452552991602,5.915402937803009,0.2,-0.35463364006879816,-3.5037077589210264,5

@@ -1,0 +1,2 @@
+symbol,volatility,trend_strength,noise,MA_Type,MA_Pair,Return,Volatility,WinRate,Sharpe,MaxDrawdown,Trades
+LTFOODS.NS,2.39,5.31,85.66,SMA,10/20,-8.019511603643448,7.653447749616271,0.3333333333333333,-1.5719852746084886,-10.601111173863398,6

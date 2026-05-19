@@ -1,0 +1,2 @@
+symbol,volatility,trend_strength,noise,MA_Type,MA_Pair,Return,Volatility,WinRate,Sharpe,MaxDrawdown,Trades
+MCX.NS,4.66,8.64,88.31,SMA,10/20,6.51763138117889,5.950481777692589,0.6,-0.048365897805439574,-2.6212525506200346,5

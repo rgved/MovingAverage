@@ -1,0 +1,2 @@
+symbol,MarketSigma,trend_strength,noise,MA_Type,MA_Pair,Return,StrategyAggr,WinRate,Sharpe,MaxDrawdown,Trades
+RAMCOCEM.NS,1.43,11.13,54.5,EMA,10/20,-2.255152535280991,6.3905587605617935,0.4,-1.1067441152126887,-5.7559594279858795,5

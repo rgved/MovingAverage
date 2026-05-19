@@ -1,0 +1,2 @@
+symbol,volatility,trend_strength,noise,MA_Type,MA_Pair,Return,Volatility,WinRate,Sharpe,MaxDrawdown,Trades
+APLAPOLLO.NS,1.75,5.75,78.29,SMA,10/20,7.5820574401958,8.118436707488694,0.6,0.37914260148437867,-4.64871453900707,5

@@ -1,0 +1,2 @@
+symbol,MarketSigma,trend_strength,noise,MA_Type,MA_Pair,Return,StrategyAggr,WinRate,Sharpe,MaxDrawdown,Trades
+BEL.NS,1.36,5.51,71.79,EMA,12/26,1.027968307105409,9.323533567857853,0.4,-0.12033886120433589,-5.593805281502462,5

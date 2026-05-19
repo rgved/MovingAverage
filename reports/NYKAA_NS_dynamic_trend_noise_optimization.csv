@@ -1,0 +1,2 @@
+symbol,volatility,trend_strength,noise,MA_Type,MA_Pair,Return,Volatility,WinRate,Sharpe,MaxDrawdown,Trades
+NYKAA.NS,2.25,9.05,69.88,EMA,10/20,2.2693549965598248,9.885255117253894,0.6,0.24372406236124483,-4.385840540668284,5

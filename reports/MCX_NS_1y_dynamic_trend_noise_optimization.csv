@@ -1,0 +1,2 @@
+symbol,MarketSigma,trend_strength,noise,MA_Type,MA_Pair,Return,StrategyAggr,WinRate,Sharpe,MaxDrawdown,Trades
+MCX.NS,1.8,18.5,43.61,EMA,10/20,8.479404897967658,6.07374306307977,0.6,0.5827254982515896,-2.6212525506200124,5

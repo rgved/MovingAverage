@@ -1,0 +1,2 @@
+symbol,volatility,trend_strength,noise,MA_Type,MA_Pair,Return,Volatility,WinRate,Sharpe,MaxDrawdown,Trades
+HEROMOTOCO.NS,1.56,0.34,98.67,SMA,10/20,0.8850754955728624,5.433462344817194,0.4,-0.9108084630876585,-5.888916739619043,5

@@ -1,0 +1,2 @@
+symbol,volatility,trend_strength,noise,MA_Type,MA_Pair,Return,Volatility,WinRate,Sharpe,MaxDrawdown,Trades
+HDFCBANK.NS,0.85,0.22,98.33,SMA,10/20,0.4402272507515237,6.9332275947171205,0.375,-1.0963119558756145,-5.730383662614069,8

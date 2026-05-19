@@ -1,4 +1,5 @@
-reports/
+reports/*
+!reports/*.csv
 data/raw/*
 !data/raw/*.parquet
 data/processed/*

@@ -1,0 +1,2 @@
+symbol,volatility,trend_strength,noise,MA_Type,MA_Pair,Return,Volatility,WinRate,Sharpe,MaxDrawdown,Trades
+NEWGEN.NS,3.38,33.07,33.01,EMA,10/20,-12.689661849417321,7.542108378295516,0.2857142857142857,-3.4251834679684703,-17.600593359581428,7

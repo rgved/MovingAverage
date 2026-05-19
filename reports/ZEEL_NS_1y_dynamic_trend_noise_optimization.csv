@@ -1,0 +1,2 @@
+symbol,MarketSigma,trend_strength,noise,MA_Type,MA_Pair,Return,StrategyAggr,WinRate,Sharpe,MaxDrawdown,Trades
+ZEEL.NS,2.91,2.52,94.56,SMA,10/20,-3.3586975917747397,5.350306822851761,0.2,-1.9278859979155243,-7.345662668900232,5

@@ -1,0 +1,2 @@
+symbol,MarketSigma,trend_strength,noise,MA_Type,MA_Pair,Return,StrategyAggr,WinRate,Sharpe,MaxDrawdown,Trades
+LATENTVIEW.NS,2.98,0.01,99.97,SMA,12/26,-7.438534340687042,7.788884199707965,0.2,-1.7200479876065684,-9.363430481008573,5

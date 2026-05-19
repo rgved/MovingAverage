@@ -1,0 +1,2 @@
+symbol,volatility,trend_strength,noise,MA_Type,MA_Pair,Return,Volatility,WinRate,Sharpe,MaxDrawdown,Trades
+ANANDRATHI.NS,1.1,8.08,57.64,EMA,10/20,5.269869626279733,6.393722397059949,0.6666666666666666,-0.605697512840425,-4.168165243370769,6

@@ -1,0 +1,2 @@
+symbol,volatility,trend_strength,noise,MA_Type,MA_Pair,Return,Volatility,WinRate,Sharpe,MaxDrawdown,Trades
+HAL.NS,2.86,8.84,79.3,SMA,10/20,-3.0614042048431322,8.189067624274863,0.4,-0.4521119373914022,-4.781855052377915,5

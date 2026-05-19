@@ -1,0 +1,2 @@
+symbol,MarketSigma,trend_strength,noise,MA_Type,MA_Pair,Return,StrategyAggr,WinRate,Sharpe,MaxDrawdown,Trades
+AARTIIND.NS,2.19,2.22,92.97,SMA,10/20,3.5076350151015845,4.994369807738832,0.5,-0.43629110596186205,-3.2309498544217163,6

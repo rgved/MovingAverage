@@ -1,0 +1,2 @@
+symbol,volatility,trend_strength,noise,MA_Type,MA_Pair,Return,Volatility,WinRate,Sharpe,MaxDrawdown,Trades
+PIIND.NS,1.49,2.25,90.64,SMA,10/20,3.9291418502749753,5.501621460011347,0.6,-0.6274082044164195,-4.330481098559313,5

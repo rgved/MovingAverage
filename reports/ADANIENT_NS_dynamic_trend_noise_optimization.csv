@@ -1,0 +1,2 @@
+symbol,volatility,trend_strength,noise,MA_Type,MA_Pair,Return,Volatility,WinRate,Sharpe,MaxDrawdown,Trades
+ADANIENT.NS,4.02,3.38,93.37,SMA,12/26,-9.671502723794545,7.370939382765132,0.2,-1.2041545711130854,-6.522527053913563,5

@@ -1,0 +1,2 @@
+symbol,volatility,trend_strength,noise,MA_Type,MA_Pair,Return,Volatility,WinRate,Sharpe,MaxDrawdown,Trades
+HINDZINC.NS,4.94,2.94,96.2,SMA,10/20,-1.7191796035580076,3.1139715258865674,0.4,-2.2720299382260243,-2.5664594703027843,5

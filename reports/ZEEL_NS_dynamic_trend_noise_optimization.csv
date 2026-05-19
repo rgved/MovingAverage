@@ -1,0 +1,2 @@
+symbol,volatility,trend_strength,noise,MA_Type,MA_Pair,Return,Volatility,WinRate,Sharpe,MaxDrawdown,Trades
+ZEEL.NS,2.95,1.8,96.3,SMA,10/20,-0.6196889057178412,5.987546615195613,0.4,-0.6699594329996486,-4.55464696143496,5

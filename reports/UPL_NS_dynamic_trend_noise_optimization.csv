@@ -1,0 +1,2 @@
+symbol,volatility,trend_strength,noise,MA_Type,MA_Pair,Return,Volatility,WinRate,Sharpe,MaxDrawdown,Trades
+UPL.NS,3.27,3.94,91.27,SMA,10/20,1.1972119218709443,8.475519153813796,0.6666666666666666,-0.31269796864289123,-4.574818872472008,6

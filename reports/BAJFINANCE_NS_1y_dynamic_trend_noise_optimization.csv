@@ -1,0 +1,2 @@
+symbol,MarketSigma,trend_strength,noise,MA_Type,MA_Pair,Return,StrategyAggr,WinRate,Sharpe,MaxDrawdown,Trades
+BAJFINANCE.NS,1.5,1.89,91.84,SMA,10/20,1.6560296469915192,8.239933771407792,0.5,-0.4004124146017916,-4.376701994336896,6

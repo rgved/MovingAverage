@@ -1,0 +1,2 @@
+symbol,volatility,trend_strength,noise,MA_Type,MA_Pair,Return,Volatility,WinRate,Sharpe,MaxDrawdown,Trades
+ACE.NS,2.12,7.12,80.43,SMA,10/20,-2.844168860927687,6.14440904606395,0.4,-0.9942199281822919,-5.770312787556275,5

@@ -1,0 +1,2 @@
+symbol,volatility,trend_strength,noise,MA_Type,MA_Pair,Return,Volatility,WinRate,Sharpe,MaxDrawdown,Trades
+ICICIBANK.NS,1.46,0.13,99.48,SMA,10/20,-4.302504212359459,9.518861943224904,0.3333333333333333,-1.0085102948770024,-9.340764469695062,6

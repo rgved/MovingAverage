@@ -1,0 +1,2 @@
+symbol,MarketSigma,trend_strength,noise,MA_Type,MA_Pair,Return,StrategyAggr,WinRate,Sharpe,MaxDrawdown,Trades
+METROPOLIS.NS,2.68,4.77,86.72,SMA,10/20,1.2149472416192575,7.198516889594623,0.5,-0.4778605881766851,-6.117022483798118,6

@@ -1,0 +1,2 @@
+symbol,volatility,trend_strength,noise,MA_Type,MA_Pair,Return,Volatility,WinRate,Sharpe,MaxDrawdown,Trades
+VBL.NS,1.4,10.21,58.95,EMA,10/20,-4.818827605455778,5.909614795709478,0.2,-1.9896114657647608,-6.934588186761792,5

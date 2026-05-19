@@ -1,0 +1,2 @@
+symbol,volatility,trend_strength,noise,MA_Type,MA_Pair,Return,Volatility,WinRate,Sharpe,MaxDrawdown,Trades
+ITCHOTELS.NS,1.98,6.36,80.43,SMA,10/20,-7.298263072993372,6.9287255715876075,0.14285714285714285,-1.7614829737584519,-6.726270985699612,7

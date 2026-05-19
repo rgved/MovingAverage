@@ -1,0 +1,2 @@
+symbol,MarketSigma,trend_strength,noise,MA_Type,MA_Pair,Return,StrategyAggr,WinRate,Sharpe,MaxDrawdown,Trades
+KAJARIACER.NS,2.0,8.98,67.64,EMA,10/20,-12.628538840130933,3.236967411678355,0.0,-4.462263626452366,-7.329953411908685,5

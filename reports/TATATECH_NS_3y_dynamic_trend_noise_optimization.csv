@@ -1,0 +1,2 @@
+symbol,MarketSigma,trend_strength,noise,MA_Type,MA_Pair,Return,StrategyAggr,WinRate,Sharpe,MaxDrawdown,Trades
+TATATECH.NS,1.84,0.8,97.15,SMA,10/20,-7.637843649505916,7.445860156407877,0.14285714285714285,-0.9320735035602914,-6.6342219840008205,7

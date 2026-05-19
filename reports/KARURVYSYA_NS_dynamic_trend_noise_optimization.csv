@@ -1,0 +1,2 @@
+symbol,volatility,trend_strength,noise,MA_Type,MA_Pair,Return,Volatility,WinRate,Sharpe,MaxDrawdown,Trades
+KARURVYSYA.NS,3.22,6.61,84.62,SMA,10/20,5.930808944331312,6.668261679127367,0.6,0.23464366320745242,-2.147066735138037,5

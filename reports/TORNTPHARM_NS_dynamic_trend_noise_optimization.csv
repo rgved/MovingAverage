@@ -1,0 +1,2 @@
+symbol,volatility,trend_strength,noise,MA_Type,MA_Pair,Return,Volatility,WinRate,Sharpe,MaxDrawdown,Trades
+TORNTPHARM.NS,1.29,0.62,97.1,SMA,10/20,-2.7497577066189605,6.111912246428875,0.42857142857142855,-1.5699893835501724,-10.08248934357534,7

@@ -1,0 +1,2 @@
+symbol,MarketSigma,trend_strength,noise,MA_Type,MA_Pair,Return,StrategyAggr,WinRate,Sharpe,MaxDrawdown,Trades
+JKCEMENT.NS,2.16,8.56,75.56,SMA,10/20,-1.8943158649407321,10.876884088829472,0.2,-0.21983317829743051,-5.214535684643751,5

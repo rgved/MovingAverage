@@ -1,0 +1,2 @@
+symbol,volatility,trend_strength,noise,MA_Type,MA_Pair,Return,Volatility,WinRate,Sharpe,MaxDrawdown,Trades
+NETWEB.NS,3.45,2.46,95.66,SMA,10/20,-8.586670089765846,4.911513433810558,0.3333333333333333,-3.7029962017497895,-10.716380392495973,6

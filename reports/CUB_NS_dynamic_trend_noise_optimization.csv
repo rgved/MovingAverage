@@ -1,0 +1,2 @@
+symbol,volatility,trend_strength,noise,MA_Type,MA_Pair,Return,Volatility,WinRate,Sharpe,MaxDrawdown,Trades
+CUB.NS,3.13,4.04,91.4,SMA,10/20,17.305613533517917,8.932632656409902,0.8,-0.3573240274756256,-5.865636243640049,5

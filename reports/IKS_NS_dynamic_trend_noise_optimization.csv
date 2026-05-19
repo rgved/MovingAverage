@@ -1,0 +1,2 @@
+symbol,volatility,trend_strength,noise,MA_Type,MA_Pair,Return,Volatility,WinRate,Sharpe,MaxDrawdown,Trades
+IKS.NS,1.63,5.47,79.61,SMA,10/20,5.694359142245697,6.0019467389512995,0.4,-0.17672271758962754,-2.1252575404543728,5

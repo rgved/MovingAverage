@@ -1,0 +1,2 @@
+symbol,volatility,trend_strength,noise,MA_Type,MA_Pair,Return,Volatility,WinRate,Sharpe,MaxDrawdown,Trades
+CANFINHOME.NS,1.83,4.1,86.03,SMA,10/20,-0.1320969231044189,7.452736883978325,0.4,-0.6694961131270415,-7.277640369387328,5

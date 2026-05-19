@@ -1,0 +1,2 @@
+symbol,MarketSigma,trend_strength,noise,MA_Type,MA_Pair,Return,StrategyAggr,WinRate,Sharpe,MaxDrawdown,Trades
+Nifty Auto,1.28,2.02,89.98,SMA,10/20,2.9434289415934956,8.301727917274706,0.5714285714285714,-0.2767728699236852,-4.585035448364327,7

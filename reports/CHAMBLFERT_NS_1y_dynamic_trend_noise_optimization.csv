@@ -1,0 +1,2 @@
+symbol,MarketSigma,trend_strength,noise,MA_Type,MA_Pair,Return,StrategyAggr,WinRate,Sharpe,MaxDrawdown,Trades
+CHAMBLFERT.NS,2.01,1.31,95.06,SMA,12/26,-11.69804788915786,5.8174717298985605,0.0,-2.3573540726258466,-6.852824043353955,5

@@ -1,0 +1,2 @@
+symbol,MarketSigma,trend_strength,noise,MA_Type,MA_Pair,Return,StrategyAggr,WinRate,Sharpe,MaxDrawdown,Trades
+Nifty IT,1.75,6.35,71.96,EMA,10/20,-1.7459350099309434,5.672940569132176,0.6,-1.144747452358192,-5.879459961195488,5

@@ -1,0 +1,2 @@
+symbol,MarketSigma,trend_strength,noise,MA_Type,MA_Pair,Return,StrategyAggr,WinRate,Sharpe,MaxDrawdown,Trades
+CGPOWER.NS,3.26,5.72,87.71,SMA,10/20,6.573124748593062,6.79754313561239,0.5,-0.14610876339133616,-2.5530581877985736,6

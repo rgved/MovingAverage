@@ -1,0 +1,2 @@
+symbol,MarketSigma,trend_strength,noise,MA_Type,MA_Pair,Return,StrategyAggr,WinRate,Sharpe,MaxDrawdown,Trades
+ANGELONE.NS,4.12,7.32,88.64,SMA,10/20,1.950487467359907,12.229662457367724,0.6,0.011428854226482635,-6.811814616185052,5

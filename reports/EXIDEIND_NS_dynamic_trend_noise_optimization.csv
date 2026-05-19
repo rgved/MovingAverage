@@ -1,0 +1,2 @@
+symbol,volatility,trend_strength,noise,MA_Type,MA_Pair,Return,Volatility,WinRate,Sharpe,MaxDrawdown,Trades
+EXIDEIND.NS,1.8,3.98,85.95,SMA,10/20,-10.598833619224635,6.023800440579455,0.2,-1.1197311842071511,-5.68042118574319,5

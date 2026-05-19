@@ -1,0 +1,2 @@
+symbol,volatility,trend_strength,noise,MA_Type,MA_Pair,Return,Volatility,WinRate,Sharpe,MaxDrawdown,Trades
+NAVA.NS,2.82,5.36,88.56,SMA,10/20,3.6580915561325034,8.135256705433004,0.4,-0.2255362261745326,-4.232160326458867,5

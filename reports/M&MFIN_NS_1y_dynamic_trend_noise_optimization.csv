@@ -1,0 +1,2 @@
+symbol,MarketSigma,trend_strength,noise,MA_Type,MA_Pair,Return,StrategyAggr,WinRate,Sharpe,MaxDrawdown,Trades
+M&MFIN.NS,2.96,3.56,91.18,SMA,10/20,-0.33952843365406826,6.2547784881670925,0.3333333333333333,-1.6412519148144533,-4.9649124993319305,6

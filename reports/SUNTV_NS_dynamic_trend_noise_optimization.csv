@@ -1,0 +1,2 @@
+symbol,volatility,trend_strength,noise,MA_Type,MA_Pair,Return,Volatility,WinRate,Sharpe,MaxDrawdown,Trades
+SUNTV.NS,1.92,3.57,86.78,SMA,10/20,-1.3796988781825004,6.486483196521196,0.4,-1.3519900321285263,-5.183515545737782,5

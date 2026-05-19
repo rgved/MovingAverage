@@ -1,0 +1,2 @@
+symbol,MarketSigma,trend_strength,noise,MA_Type,MA_Pair,Return,StrategyAggr,WinRate,Sharpe,MaxDrawdown,Trades
+Nifty 500,1.18,0.74,95.62,SMA,10/20,-16.90135560514191,6.606602314252054,0.125,-1.8041652038254319,-9.499739964249931,8

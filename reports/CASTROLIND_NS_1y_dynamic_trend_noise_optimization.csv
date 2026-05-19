@@ -1,0 +1,2 @@
+symbol,MarketSigma,trend_strength,noise,MA_Type,MA_Pair,Return,StrategyAggr,WinRate,Sharpe,MaxDrawdown,Trades
+CASTROLIND.NS,0.53,0.1,98.85,SMA,10/20,-13.812701233830326,8.036622539011953,0.0,-2.088450947407526,-12.680950717998362,7

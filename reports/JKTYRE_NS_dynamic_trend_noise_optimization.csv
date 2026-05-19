@@ -1,0 +1,2 @@
+symbol,volatility,trend_strength,noise,MA_Type,MA_Pair,Return,Volatility,WinRate,Sharpe,MaxDrawdown,Trades
+JKTYRE.NS,1.92,3.2,88.05,SMA,10/20,7.155288069897225,9.612202645265798,0.5,0.1450928740375739,-3.925341543197991,6

@@ -1,0 +1,2 @@
+symbol,MarketSigma,trend_strength,noise,MA_Type,MA_Pair,Return,StrategyAggr,WinRate,Sharpe,MaxDrawdown,Trades
+HDFCLIFE.NS,1.51,1.51,93.54,SMA,10/20,-8.570547460765631,6.311132403977111,0.2857142857142857,-1.1963261850078997,-5.3084676383220675,7

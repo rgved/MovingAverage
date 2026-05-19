@@ -1,0 +1,2 @@
+symbol,volatility,trend_strength,noise,MA_Type,MA_Pair,Return,Volatility,WinRate,Sharpe,MaxDrawdown,Trades
+SUZLON.NS,2.15,12.45,64.8,EMA,10/20,9.231399504317528,7.373027821121539,0.5,0.3409932260764132,-2.721712444790614,6

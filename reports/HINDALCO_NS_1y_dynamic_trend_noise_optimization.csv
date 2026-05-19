@@ -1,0 +1,2 @@
+symbol,MarketSigma,trend_strength,noise,MA_Type,MA_Pair,Return,StrategyAggr,WinRate,Sharpe,MaxDrawdown,Trades
+HINDALCO.NS,1.7,3.08,88.91,SMA,10/20,13.317231274190355,7.271363115896694,0.8,-0.3418891564354362,-2.9233434387180512,5

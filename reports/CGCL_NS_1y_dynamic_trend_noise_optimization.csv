@@ -1,0 +1,2 @@
+symbol,MarketSigma,trend_strength,noise,MA_Type,MA_Pair,Return,StrategyAggr,WinRate,Sharpe,MaxDrawdown,Trades
+CGCL.NS,2.11,11.01,66.7,EMA,10/20,-29.139167930923215,16.21469788441116,0.0,-2.021570097042957,-23.57658062619674,8

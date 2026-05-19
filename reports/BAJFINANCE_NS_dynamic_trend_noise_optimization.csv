@@ -1,0 +1,2 @@
+symbol,volatility,trend_strength,noise,MA_Type,MA_Pair,Return,Volatility,WinRate,Sharpe,MaxDrawdown,Trades
+BAJFINANCE.NS,2.15,2.3,91.66,SMA,10/20,-7.47691535846533,7.790432130297745,0.16666666666666666,-0.7232034298023927,-7.853368402766359,6

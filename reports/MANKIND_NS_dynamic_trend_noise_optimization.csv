@@ -1,0 +1,2 @@
+symbol,volatility,trend_strength,noise,MA_Type,MA_Pair,Return,Volatility,WinRate,Sharpe,MaxDrawdown,Trades
+MANKIND.NS,1.81,5.98,80.85,SMA,10/20,0.6919684221981193,6.668746626966862,0.6,0.5088127863664871,-1.4836112708453086,5

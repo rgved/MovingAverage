@@ -1,0 +1,2 @@
+symbol,MarketSigma,trend_strength,noise,MA_Type,MA_Pair,Return,StrategyAggr,WinRate,Sharpe,MaxDrawdown,Trades
+HAL.NS,2.15,0.73,97.44,SMA,10/20,-5.0253163239439065,8.362107124419637,0.3333333333333333,-0.7213667869693206,-4.781855052377903,6

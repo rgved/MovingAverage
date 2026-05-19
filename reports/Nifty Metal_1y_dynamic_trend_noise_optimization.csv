@@ -1,0 +1,2 @@
+symbol,MarketSigma,trend_strength,noise,MA_Type,MA_Pair,Return,StrategyAggr,WinRate,Sharpe,MaxDrawdown,Trades
+Nifty Metal,2.26,7.65,78.38,SMA,10/20,-2.6596199267862164,6.073235716896446,0.4,-1.087830457609121,-8.856956688307793,5

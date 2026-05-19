@@ -1,0 +1,2 @@
+symbol,MarketSigma,trend_strength,noise,MA_Type,MA_Pair,Return,StrategyAggr,WinRate,Sharpe,MaxDrawdown,Trades
+RELIANCE.NS,1.59,1.29,94.47,SMA,10/20,-2.203577549077196,7.063692461082943,0.3333333333333333,-0.8399630369879971,-4.108870743820514,6

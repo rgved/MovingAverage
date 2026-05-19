@@ -1,0 +1,2 @@
+symbol,volatility,trend_strength,noise,MA_Type,MA_Pair,Return,Volatility,WinRate,Sharpe,MaxDrawdown,Trades
+STARHEALTH.NS,1.66,2.04,91.38,SMA,10/20,4.310959837434436,5.333454961331581,0.6,-0.8620062825697278,-3.1067086897793694,5

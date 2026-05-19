@@ -1,0 +1,2 @@
+symbol,volatility,trend_strength,noise,MA_Type,MA_Pair,Return,Volatility,WinRate,Sharpe,MaxDrawdown,Trades
+BRITANNIA.NS,1.33,1.11,94.53,SMA,10/20,9.825838760517769,7.236709105563024,0.6,0.15644523504030425,-2.5237933378653654,5

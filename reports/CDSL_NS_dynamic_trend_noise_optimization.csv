@@ -1,0 +1,2 @@
+symbol,volatility,trend_strength,noise,MA_Type,MA_Pair,Return,Volatility,WinRate,Sharpe,MaxDrawdown,Trades
+CDSL.NS,3.1,5.55,86.54,SMA,10/20,-3.916464820827459,6.048594942705739,0.42857142857142855,-1.5979326921415515,-5.51439590379138,7

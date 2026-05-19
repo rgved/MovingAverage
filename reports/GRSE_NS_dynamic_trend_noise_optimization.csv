@@ -1,0 +1,2 @@
+symbol,volatility,trend_strength,noise,MA_Type,MA_Pair,Return,Volatility,WinRate,Sharpe,MaxDrawdown,Trades
+GRSE.NS,3.68,3.26,93.72,SMA,10/20,17.55093141030988,22.761596865284638,0.5,0.4860029328709965,-8.95789398122936,6

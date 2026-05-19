@@ -1,0 +1,2 @@
+symbol,MarketSigma,trend_strength,noise,MA_Type,MA_Pair,Return,StrategyAggr,WinRate,Sharpe,MaxDrawdown,Trades
+ALKEM.NS,1.81,4.01,85.12,SMA,10/20,-16.832325992028974,7.574985093880884,0.13333333333333333,-1.3106325281631555,-9.594488241462484,15

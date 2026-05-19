@@ -1,0 +1,2 @@
+symbol,volatility,trend_strength,noise,MA_Type,MA_Pair,Return,Volatility,WinRate,Sharpe,MaxDrawdown,Trades
+ASTRAL.NS,2.13,1.6,94.99,SMA,10/20,-2.5922587652640994,7.942717581473227,0.42857142857142855,-0.08580384218406224,-4.956985309200935,7

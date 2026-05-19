@@ -1,0 +1,2 @@
+symbol,volatility,trend_strength,noise,MA_Type,MA_Pair,Return,Volatility,WinRate,Sharpe,MaxDrawdown,Trades
+ADANIENSOL.NS,4.57,5.94,91.09,SMA,12/26,0.3874534128350149,5.8501193120885375,0.6,-0.7867388124174165,-5.042723968808427,5

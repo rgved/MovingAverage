@@ -1,0 +1,2 @@
+symbol,MarketSigma,trend_strength,noise,MA_Type,MA_Pair,Return,StrategyAggr,WinRate,Sharpe,MaxDrawdown,Trades
+NATIONALUM.NS,2.49,5.32,84.47,SMA,10/20,-10.274834250197195,4.947028972049156,0.3,-2.216446648527882,-10.789366546769442,10

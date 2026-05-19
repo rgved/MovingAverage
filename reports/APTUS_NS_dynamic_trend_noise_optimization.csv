@@ -1,0 +1,2 @@
+symbol,volatility,trend_strength,noise,MA_Type,MA_Pair,Return,Volatility,WinRate,Sharpe,MaxDrawdown,Trades
+APTUS.NS,1.71,7.25,74.55,EMA,10/20,0.2674742177207312,5.9364575322973305,0.4,-0.7753186894460153,-4.739137523047132,5

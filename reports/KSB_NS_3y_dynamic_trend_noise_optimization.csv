@@ -1,0 +1,2 @@
+symbol,MarketSigma,trend_strength,noise,MA_Type,MA_Pair,Return,StrategyAggr,WinRate,Sharpe,MaxDrawdown,Trades
+KSB.NS,2.07,7.76,78.45,SMA,10/20,0.6209452382349268,8.6280018776973,0.5,-0.21583008325991396,-6.246486354450598,6

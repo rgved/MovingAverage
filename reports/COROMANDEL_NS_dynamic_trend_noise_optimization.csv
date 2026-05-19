@@ -1,0 +1,2 @@
+symbol,volatility,trend_strength,noise,MA_Type,MA_Pair,Return,Volatility,WinRate,Sharpe,MaxDrawdown,Trades
+COROMANDEL.NS,1.54,1.65,92.78,SMA,10/20,3.33051800452977,9.533351660641756,0.8,-0.3988123875218621,-8.07212040118782,5

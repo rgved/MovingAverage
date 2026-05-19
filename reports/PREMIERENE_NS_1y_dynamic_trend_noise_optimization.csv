@@ -1,0 +1,2 @@
+symbol,MarketSigma,trend_strength,noise,MA_Type,MA_Pair,Return,StrategyAggr,WinRate,Sharpe,MaxDrawdown,Trades
+PREMIERENE.NS,3.56,6.8,87.87,SMA,10/20,-7.10686712523586,8.049630620870788,0.16666666666666666,-0.602942397170522,-5.204028423376905,6

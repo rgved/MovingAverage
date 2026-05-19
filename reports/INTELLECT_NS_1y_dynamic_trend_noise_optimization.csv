@@ -1,0 +1,2 @@
+symbol,MarketSigma,trend_strength,noise,MA_Type,MA_Pair,Return,StrategyAggr,WinRate,Sharpe,MaxDrawdown,Trades
+INTELLECT.NS,2.72,14.43,67.47,EMA,10/20,-0.916613751500106,3.472828682323762,0.6,-1.9364260443702006,-1.9765494137353512,5

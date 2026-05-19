@@ -1,0 +1,2 @@
+symbol,MarketSigma,trend_strength,noise,MA_Type,MA_Pair,Return,StrategyAggr,WinRate,Sharpe,MaxDrawdown,Trades
+YESBANK.NS,2.2,10.32,61.87,EMA,10/20,9.444674609902592,12.434611052986872,0.5,0.44690167211570614,-4.55329421654127,6

@@ -1,0 +1,2 @@
+symbol,MarketSigma,trend_strength,noise,MA_Type,MA_Pair,Return,StrategyAggr,WinRate,Sharpe,MaxDrawdown,Trades
+Nifty Midcap 150,1.25,0.27,98.47,SMA,10/20,-13.13452833895763,6.908339512155348,0.14285714285714285,-1.509471809433845,-7.283815011477146,7

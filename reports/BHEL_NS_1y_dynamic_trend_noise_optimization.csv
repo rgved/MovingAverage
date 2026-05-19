@@ -1,0 +1,2 @@
+symbol,MarketSigma,trend_strength,noise,MA_Type,MA_Pair,Return,StrategyAggr,WinRate,Sharpe,MaxDrawdown,Trades
+BHEL.NS,2.66,18.83,56.35,EMA,10/20,8.734717452895913,8.839464767780736,0.5,0.0481983391188877,-5.613908004346236,6

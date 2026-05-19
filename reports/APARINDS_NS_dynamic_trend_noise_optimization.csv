@@ -1,0 +1,2 @@
+symbol,volatility,trend_strength,noise,MA_Type,MA_Pair,Return,Volatility,WinRate,Sharpe,MaxDrawdown,Trades
+APARINDS.NS,2.4,0.12,99.68,SMA,10/20,8.642667533174908,8.96124877900905,0.8,0.5633399404321023,-3.5788202828561544,5

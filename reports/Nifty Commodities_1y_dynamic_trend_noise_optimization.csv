@@ -1,0 +1,2 @@
+symbol,MarketSigma,trend_strength,noise,MA_Type,MA_Pair,Return,StrategyAggr,WinRate,Sharpe,MaxDrawdown,Trades
+Nifty Commodities,1.63,5.63,79.1,SMA,10/20,8.372969380253048,7.387894702078916,0.5714285714285714,0.9826741359224164,-7.4732117580568636,7

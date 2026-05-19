@@ -1,0 +1,2 @@
+symbol,volatility,trend_strength,noise,MA_Type,MA_Pair,Return,Volatility,WinRate,Sharpe,MaxDrawdown,Trades
+INDIAMART.NS,2.78,4.33,87.54,SMA,10/20,-9.724085066345689,5.337759903275061,0.0,-2.2959737116582617,-6.104995232721033,5

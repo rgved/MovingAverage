@@ -1,0 +1,2 @@
+symbol,volatility,trend_strength,noise,MA_Type,MA_Pair,Return,Volatility,WinRate,Sharpe,MaxDrawdown,Trades
+JMFINANCIL.NS,2.28,17.5,56.86,EMA,10/20,-16.002796096234828,7.357972793098197,0.3333333333333333,-0.9272520188521083,-6.128426665167175,6

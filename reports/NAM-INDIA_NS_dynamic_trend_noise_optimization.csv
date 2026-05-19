@@ -1,0 +1,2 @@
+symbol,volatility,trend_strength,noise,MA_Type,MA_Pair,Return,Volatility,WinRate,Sharpe,MaxDrawdown,Trades
+NAM-INDIA.NS,2.34,4.13,89.58,SMA,10/20,-2.3613259179095514,5.614166831083913,0.3333333333333333,-1.2236801855513746,-4.143892675018545,6

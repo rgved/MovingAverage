@@ -1,0 +1,2 @@
+symbol,volatility,trend_strength,noise,MA_Type,MA_Pair,Return,Volatility,WinRate,Sharpe,MaxDrawdown,Trades
+BPCL.NS,1.35,9.09,62.79,EMA,10/20,9.79646498432114,8.019396068952647,0.8,0.9141797798370649,-1.831113801452755,5

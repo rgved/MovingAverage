@@ -1,0 +1,2 @@
+symbol,MarketSigma,trend_strength,noise,MA_Type,MA_Pair,Return,StrategyAggr,WinRate,Sharpe,MaxDrawdown,Trades
+CDSL.NS,1.57,13.09,50.3,EMA,10/20,12.706750980181724,8.161369233429927,0.6666666666666666,0.850385207595642,-2.9964356914154444,6

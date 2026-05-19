@@ -1,0 +1,2 @@
+symbol,volatility,trend_strength,noise,MA_Type,MA_Pair,Return,Volatility,WinRate,Sharpe,MaxDrawdown,Trades
+POLYCAB.NS,2.82,0.8,98.18,SMA,10/20,-9.08039067751768,7.950998666373568,0.3333333333333333,-0.7685409193164898,-4.396332327152452,6

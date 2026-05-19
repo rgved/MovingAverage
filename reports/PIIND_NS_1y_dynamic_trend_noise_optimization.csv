@@ -1,0 +1,2 @@
+symbol,MarketSigma,trend_strength,noise,MA_Type,MA_Pair,Return,StrategyAggr,WinRate,Sharpe,MaxDrawdown,Trades
+PIIND.NS,1.16,2.48,85.43,SMA,10/20,0.8250013156600788,8.1084295305808,0.4,-0.30898483724173625,-4.345672720043813,5

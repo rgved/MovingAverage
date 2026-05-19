@@ -1,0 +1,2 @@
+symbol,MarketSigma,trend_strength,noise,MA_Type,MA_Pair,Return,StrategyAggr,WinRate,Sharpe,MaxDrawdown,Trades
+JYOTHYLAB.NS,1.33,15.7,38.32,EMA,10/20,-8.20963476266876,7.193289630113217,0.16666666666666666,-2.1758619793754628,-8.602753414532183,6

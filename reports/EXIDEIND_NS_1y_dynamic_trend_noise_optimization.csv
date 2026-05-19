@@ -1,0 +1,2 @@
+symbol,MarketSigma,trend_strength,noise,MA_Type,MA_Pair,Return,StrategyAggr,WinRate,Sharpe,MaxDrawdown,Trades
+EXIDEIND.NS,2.25,2.93,91.07,SMA,10/20,-5.762327225548836,6.571251163858588,0.4,-1.2474519487653013,-4.459991659357598,5

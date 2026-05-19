@@ -1,0 +1,2 @@
+symbol,MarketSigma,trend_strength,noise,MA_Type,MA_Pair,Return,StrategyAggr,WinRate,Sharpe,MaxDrawdown,Trades
+INDUSINDBK.NS,2.29,4.17,86.89,SMA,10/20,5.710604708634537,8.207020055464689,0.8,-0.17017591655337355,-3.7890809087039234,5

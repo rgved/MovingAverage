@@ -1,0 +1,2 @@
+symbol,MarketSigma,trend_strength,noise,MA_Type,MA_Pair,Return,StrategyAggr,WinRate,Sharpe,MaxDrawdown,Trades
+REDINGTON.NS,2.17,3.47,90.26,SMA,10/20,2.925056343814303,6.522307031198079,0.6,-0.36698604293551806,-2.398324242983807,5

@@ -1,0 +1,2 @@
+symbol,volatility,trend_strength,noise,MA_Type,MA_Pair,Return,Volatility,WinRate,Sharpe,MaxDrawdown,Trades
+NATCOPHARM.NS,2.24,9.07,76.94,SMA,10/20,-7.61000271435689,8.391731538868962,0.14285714285714285,-1.4171643747048914,-6.836199878534366,7

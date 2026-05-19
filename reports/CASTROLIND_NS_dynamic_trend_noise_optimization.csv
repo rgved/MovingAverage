@@ -1,0 +1,2 @@
+symbol,volatility,trend_strength,noise,MA_Type,MA_Pair,Return,Volatility,WinRate,Sharpe,MaxDrawdown,Trades
+CASTROLIND.NS,0.85,1.81,86.3,SMA,10/20,-12.651737232927228,7.822173084784325,0.14285714285714285,-2.2541278891373224,-10.851291965424092,7

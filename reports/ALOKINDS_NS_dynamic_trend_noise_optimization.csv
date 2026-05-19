@@ -1,0 +1,2 @@
+symbol,volatility,trend_strength,noise,MA_Type,MA_Pair,Return,Volatility,WinRate,Sharpe,MaxDrawdown,Trades
+ALOKINDS.NS,2.08,6.46,81.04,SMA,10/20,-9.304789365155708,5.996897361913894,0.16666666666666666,-2.5006176593440057,-7.944562005718625,6

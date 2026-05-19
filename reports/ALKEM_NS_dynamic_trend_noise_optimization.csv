@@ -1,0 +1,2 @@
+symbol,volatility,trend_strength,noise,MA_Type,MA_Pair,Return,Volatility,WinRate,Sharpe,MaxDrawdown,Trades
+ALKEM.NS,1.16,1.98,87.52,SMA,10/20,-8.270658933803876,6.552976132030134,0.14285714285714285,-1.5995540343367665,-7.761741939963973,7

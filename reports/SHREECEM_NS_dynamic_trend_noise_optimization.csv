@@ -1,0 +1,2 @@
+symbol,volatility,trend_strength,noise,MA_Type,MA_Pair,Return,Volatility,WinRate,Sharpe,MaxDrawdown,Trades
+SHREECEM.NS,1.1,1.41,92.38,SMA,10/20,0.5433392772619783,8.117773879739797,0.4,-1.023037510718654,-7.59450593081602,5

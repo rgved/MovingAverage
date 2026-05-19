@@ -1,0 +1,2 @@
+symbol,volatility,trend_strength,noise,MA_Type,MA_Pair,Return,Volatility,WinRate,Sharpe,MaxDrawdown,Trades
+DEEPAKFERT.NS,2.3,22.57,39.97,EMA,12/26,-10.737746650349656,7.701488233941754,0.3333333333333333,-2.3635713006284926,-13.680862646020698,6

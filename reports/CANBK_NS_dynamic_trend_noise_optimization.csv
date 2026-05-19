@@ -1,0 +1,2 @@
+symbol,volatility,trend_strength,noise,MA_Type,MA_Pair,Return,Volatility,WinRate,Sharpe,MaxDrawdown,Trades
+CANBK.NS,2.23,2.15,93.72,SMA,10/20,-1.3835156244703217,7.097491223354782,0.5,-0.5442021589501437,-6.592239684101974,6
