@@ -94,8 +94,8 @@ def process_all(data_dir=RAW_DATA_DIR,
 
         path = os.path.join(data_dir, file)
         df = process_file(path, ma_type, fast, slow)
-        out_path = os.path.join(out_dir, file)
-        df.to_csv(out_path, index=False)
+        out_path = os.path.join(out_dir, file.replace(".csv", ".parquet"))
+        df.to_parquet(out_path, index=False, engine="pyarrow")
         print(f"OK Processed {file} -> {out_path}")
         print(f"PROGRESS:{idx}/{total_files}", flush=True)
 

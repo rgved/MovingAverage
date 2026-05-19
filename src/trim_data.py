@@ -26,12 +26,15 @@ print(
 summary = []
 
 # ---------- Trim Loop ----------
-files = [f for f in os.listdir(INPUT_DIR) if f.endswith(".csv")]
+files = [f for f in os.listdir(INPUT_DIR) if f.endswith(".parquet") or f.endswith(".csv")]
 total_files = len(files)
 
 for idx, file in enumerate(files, 1):
     file_path = os.path.join(INPUT_DIR, file)
-    df = pd.read_csv(file_path)
+    if file.endswith(".parquet"):
+        df = pd.read_parquet(file_path, engine="pyarrow")
+    else:
+        df = pd.read_csv(file_path)
 
     # Parse date safely (expecting naive dates from features.py, but handling potential TZ just in case)
     df["Date"] = pd.to_datetime(df["Date"], utc=True).dt.tz_convert("Asia/Kolkata").dt.tz_localize(None)
@@ -44,8 +47,9 @@ for idx, file in enumerate(files, 1):
         (df["Date"] <= END_DATE)
     ]
 
-    out_path = os.path.join(OUTPUT_DIR, file)
-    df_trimmed.to_csv(out_path, index=False)
+    out_name = file if file.endswith(".parquet") else file.replace(".csv", ".parquet")
+    out_path = os.path.join(OUTPUT_DIR, out_name)
+    df_trimmed.to_parquet(out_path, index=False, engine="pyarrow")
 
     row_count = len(df_trimmed)
     status = "OK" if row_count > 0 else "! EMPTY"

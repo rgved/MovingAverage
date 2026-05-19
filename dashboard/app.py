@@ -159,52 +159,132 @@ universe = st.sidebar.radio("Universe", ["NSE 500", "Nifty 50", "F&O", "Indices"
 # Min Trades Filter
 min_trades = st.sidebar.slider("Minimum Trades", 0, 50, 5)
 
-# ---------- CACHED CROSSOVER CALCULATION ----------
-@st.cache_data
-def calculate_crossovers(stock_list, tf, years, screener_active=False, scr_ma_type="Both", scr_fast_ma=20, scr_slow_ma=50):
-    crossover_data = {}
-    
-    # Use processed data (full history) instead of trimmed to ensure we find crossovers
-    full_data_dir = os.path.join(BASE_DIR, "data", "processed")
-    
-    for symbol in stock_list:
-        price_file = os.path.join(full_data_dir, f"{symbol}.csv")
-        if not os.path.exists(price_file):
-            continue
-            
-        try:
-            df = pd.read_csv(price_file)
-            df["Date"] = pd.to_datetime(df["Date"], utc=True, errors="coerce").dt.tz_convert(None)
-            df = df.sort_values("Date")
-            
-            # Resample if Weekly
-            if tf == "Weekly":
-                df.set_index("Date", inplace=True)
-                df = df.resample("W").agg({"Open": "first", "High": "max", "Low": "min", "Close": "last", "Volume": "sum"})
-                df.dropna(inplace=True)
-                df.reset_index(inplace=True)
+# ---------- HELPERS ----------
+def get_dir_mtime(dir_path: str, ext: str = ".parquet") -> float:
+    """Return the max file-mtime for `ext` files in dir_path.
+    Passed as a @st.cache_data key — changes automatically when the
+    pipeline writes new data, triggering auto-invalidation."""
+    try:
+        files = [os.path.join(dir_path, f)
+                 for f in os.listdir(dir_path) if f.endswith(ext)]
+        return max((os.path.getmtime(f) for f in files), default=0.0)
+    except Exception:
+        return 0.0
 
-            if screener_active:
-                # When screener is active, compute crossovers DIRECTLY from price data
-                # using the user-selected MA pair. No dependency on reports.
-                fast = scr_fast_ma
-                slow = scr_slow_ma
-                ma_types_to_check = ["EMA", "SMA"] if scr_ma_type == "Both" else [scr_ma_type]
+
+# ---------- REPORT CACHE — loaded once per session / lookback change ----------
+@st.cache_data
+def load_all_reports(years: int, reports_mtime: float) -> dict:
+    """
+    Read the first (best) row of every optimization report CSV and cache the result
+    in memory.  Returns {raw_filename_stem: pd.Series}, e.g. {"GRASIM_NS": <row>}.
+
+    Cache key includes reports_mtime — auto-invalidates when reports are updated
+    by the pipeline without needing st.cache_data.clear().
+    """
+    suffix = f"_{years}y_dynamic_trend_noise_optimization.csv"
+    cache = {}
+    for file in os.listdir(reports_dir):
+        if not file.endswith(suffix):
+            continue
+        try:
+            rep = pd.read_csv(os.path.join(reports_dir, file))
+            if rep.empty:
+                continue
+            raw_name = file.replace(suffix, "")
+            cache[raw_name] = rep.iloc[0]   # store only the top (best) row
+        except Exception:
+            pass
+    return cache
+
+# ---------- PRICE DATA CACHE — loaded once per timeframe / data update ----------
+@st.cache_data
+def load_all_price_data(tf: str, data_mtime: float) -> dict:
+    """
+    Load all price files (Parquet preferred, CSV fallback) into memory once.
+    ~20 MB total — fits comfortably in RAM for a single-user local setup.
+
+    Cache key includes data_mtime — auto-invalidates after pipeline runs.
+    Cached data must never be mutated; callers must call .copy() first.
+    """
+    full_data_dir = os.path.join(BASE_DIR, "data", "processed")
+    price_data = {}
+    needed_cols = ["Date", "Open", "High", "Low", "Close", "Volume"]
+
+    for file in os.listdir(full_data_dir):
+        is_parquet = file.endswith(".parquet")
+        is_csv     = file.endswith(".csv")
+        if not (is_parquet or is_csv):
+            continue
+        symbol = file.rsplit(".", 1)[0]   # strip extension
+        try:
+            if is_parquet:
+                df = pd.read_parquet(
+                    os.path.join(full_data_dir, file),
+                    engine="pyarrow",
+                    columns=needed_cols,
+                )
             else:
-                # Use the report's best strategy
-                report_file = os.path.join(reports_dir, f"{symbol.replace('.', '_')}_{years}y_dynamic_trend_noise_optimization.csv")
-                if not os.path.exists(report_file):
-                    continue
-                rep = pd.read_csv(report_file)
-                best = rep.iloc[0]
-                fast, slow = map(int, best["MA_Pair"].split("/"))
-                ma_types_to_check = [best["MA_Type"]]
+                df = pd.read_csv(
+                    os.path.join(full_data_dir, file),
+                    usecols=needed_cols,
+                )
+            df["Date"] = pd.to_datetime(
+                df["Date"], utc=True, errors="coerce"
+            ).dt.tz_convert(None)
+            df = df.sort_values("Date").reset_index(drop=True)
+            if tf == "Weekly":
+                df = (
+                    df.set_index("Date")
+                    .resample("W")
+                    .agg({"Open": "first", "High": "max",
+                          "Low": "min",  "Close": "last", "Volume": "sum"})
+                    .dropna()
+                    .reset_index()
+                )
+            price_data[symbol] = df
+        except Exception:
+            pass
+    return price_data
+
+
+# ---------- CACHED CROSSOVER CALCULATION ----------
+# IMPORTANT: This function ALWAYS uses the report's best MA strategy to compute crossovers.
+# Used in default (non-screener) mode.
+@st.cache_data
+def calculate_crossovers(stock_list: tuple, tf: str, years: int,
+                         data_mtime: float) -> dict:
+    """
+    Calculate the most recent MA crossover for each stock using ONLY the stock's
+    own optimized MA pair from its report file.
+
+    stock_list MUST be a tuple so Streamlit can hash it as a cache key.
+    Stocks are processed in parallel via ThreadPoolExecutor.
+    data_mtime auto-invalidates the cache when the pipeline writes new data.
+    """
+    from concurrent.futures import ThreadPoolExecutor, as_completed
+
+    reports_cache = load_all_reports(years, data_mtime)
+    price_data    = load_all_price_data(tf, data_mtime)
+
+    def process_one(symbol):
+        df_cached = price_data.get(symbol)
+        if df_cached is None:
+            return symbol, None
+        df = df_cached.copy()
+        try:
+            raw_name = symbol.replace(".", "_")
+            best = reports_cache.get(raw_name)
+            if best is None:
+                return symbol, None
+
+            fast, slow = map(int, best["MA_Pair"].split("/"))
+            ma_types_to_check = [best["MA_Type"]]
 
             best_crossover_date = pd.Timestamp.min
             best_crossover_data = None
 
             for m_type in ma_types_to_check:
-                # Calculate MAs
                 if m_type == "EMA":
                     ma_fast = df["Close"].ewm(span=fast, adjust=False).mean()
                     ma_slow = df["Close"].ewm(span=slow, adjust=False).mean()
@@ -212,38 +292,129 @@ def calculate_crossovers(stock_list, tf, years, screener_active=False, scr_ma_ty
                     ma_fast = df["Close"].rolling(fast).mean()
                     ma_slow = df["Close"].rolling(slow).mean()
 
-                raw_signal = np.where(ma_fast > ma_slow, 1, -1)
+                raw_signal     = np.where(ma_fast > ma_slow, 1, -1)
                 crossover_diff = pd.Series(raw_signal).diff().fillna(0)
 
                 temp_df = df.copy()
                 temp_df["Crossover"] = crossover_diff.values
-                
-                # Filter for crossovers (2 = Bullish, -2 = Bearish)
                 crossovers = temp_df[temp_df["Crossover"].abs() == 2]
-                
+
                 if not crossovers.empty:
-                    last_crossover_row = crossovers.iloc[-1]
-                    last_crossover_date = last_crossover_row["Date"]
-                    crossover_type = "Bullish" if last_crossover_row["Crossover"] == 2 else "Bearish"
-                    
-                    # Count trades in last 3 months
+                    last_row       = crossovers.iloc[-1]
+                    last_date      = last_row["Date"]
+                    crossover_type = "Bullish" if last_row["Crossover"] == 2 else "Bearish"
                     three_months_ago = temp_df["Date"].max() - pd.DateOffset(months=3)
-                    recent_trades = len(crossovers[crossovers["Date"] >= three_months_ago])
-                    
-                    if best_crossover_date is pd.Timestamp.min or last_crossover_date > best_crossover_date:
-                        best_crossover_date = last_crossover_date
+                    recent_trades  = len(crossovers[crossovers["Date"] >= three_months_ago])
+
+                    if last_date > best_crossover_date:
+                        best_crossover_date = last_date
                         best_crossover_data = {
-                            "Recent Bullish Crossover": last_crossover_date,
-                            "Recent 3M Trades": recent_trades,
-                            "Crossover Type": crossover_type
+                            "Recent Bullish Crossover": last_date,
+                            "Recent 3M Trades":         recent_trades,
+                            "Crossover Type":           crossover_type,
                         }
-            
-            if best_crossover_data:
-                crossover_data[symbol] = best_crossover_data
-            
+
+            return symbol, best_crossover_data
         except Exception:
-            continue
-            
+            return symbol, None
+
+    crossover_data = {}
+    workers = min(8, max(1, len(stock_list)))
+    with ThreadPoolExecutor(max_workers=workers) as executor:
+        futures = {executor.submit(process_one, s): s for s in stock_list}
+        for future in as_completed(futures):
+            try:
+                symbol, data = future.result()
+                if data:
+                    crossover_data[symbol] = data
+            except Exception:
+                pass
+
+    print(f"[CROSSOVER] Done: {len(crossover_data)}/{len(stock_list)} stocks.")
+    return crossover_data
+
+
+@st.cache_data
+def calculate_crossovers_with_pair(
+    stock_list: tuple,
+    tf: str,
+    fast: int,
+    slow: int,
+    ma_type: str,
+    data_mtime: float,
+) -> dict:
+    """
+    Calculate the most recent MA crossover for each stock using an EXPLICIT
+    MA pair (fast/slow/ma_type) instead of each stock's best historical pair.
+
+    This is used when the Refine Screener is active so that the table matches
+    the Excel export — every stock in the universe is evaluated on the same
+    user-selected pair, regardless of what its optimal MA happened to be.
+    """
+    from concurrent.futures import ThreadPoolExecutor, as_completed
+
+    price_data = load_all_price_data(tf, data_mtime)
+
+    # If "Both" MA types are selected, we check EMA first then SMA and keep
+    # whichever produced the more recent crossover (same logic as the CSV export).
+    types_to_check = ["EMA", "SMA"] if ma_type == "Both" else [ma_type]
+
+    def process_one(symbol):
+        df_cached = price_data.get(symbol)
+        if df_cached is None:
+            return symbol, None
+        df = df_cached.copy()
+        try:
+            best_crossover_date = pd.Timestamp.min
+            best_crossover_data = None
+
+            for m_type in types_to_check:
+                if m_type == "EMA":
+                    ma_fast = df["Close"].ewm(span=fast, adjust=False).mean()
+                    ma_slow = df["Close"].ewm(span=slow, adjust=False).mean()
+                else:
+                    ma_fast = df["Close"].rolling(fast).mean()
+                    ma_slow = df["Close"].rolling(slow).mean()
+
+                raw_signal     = np.where(ma_fast > ma_slow, 1, -1)
+                crossover_diff = pd.Series(raw_signal).diff().fillna(0)
+
+                temp_df = df.copy()
+                temp_df["Crossover"] = crossover_diff.values
+                crossovers = temp_df[temp_df["Crossover"].abs() == 2]
+
+                if not crossovers.empty:
+                    last_row       = crossovers.iloc[-1]
+                    last_date      = last_row["Date"]
+                    crossover_type = "Bullish" if last_row["Crossover"] == 2 else "Bearish"
+                    three_months_ago = temp_df["Date"].max() - pd.DateOffset(months=3)
+                    recent_trades  = len(crossovers[crossovers["Date"] >= three_months_ago])
+
+                    if last_date > best_crossover_date:
+                        best_crossover_date = last_date
+                        best_crossover_data = {
+                            "Recent Bullish Crossover": last_date,
+                            "Recent 3M Trades":         recent_trades,
+                            "Crossover Type":           crossover_type,
+                        }
+
+            return symbol, best_crossover_data
+        except Exception:
+            return symbol, None
+
+    crossover_data = {}
+    workers = min(8, max(1, len(stock_list)))
+    with ThreadPoolExecutor(max_workers=workers) as executor:
+        futures = {executor.submit(process_one, s): s for s in stock_list}
+        for future in as_completed(futures):
+            try:
+                symbol, data = future.result()
+                if data:
+                    crossover_data[symbol] = data
+            except Exception:
+                pass
+
+    print(f"[CROSSOVER PAIR {fast}/{slow} {ma_type}] Done: {len(crossover_data)}/{len(stock_list)} stocks.")
     return crossover_data
 
 
@@ -269,16 +440,21 @@ def build_download_csv(tf, ma_type_filter, crossover_filter, fast_mas, slow_mas,
     names_by_date = {}  
 
     for file in os.listdir(full_data_dir):
-        if not file.endswith(".csv"):
+        is_parquet = file.endswith(".parquet")
+        is_csv = file.endswith(".csv")
+        if not (is_parquet or is_csv):
             continue
-        symbol = file.replace(".csv", "")
+        symbol = file.rsplit(".", 1)[0]
 
-        price_file = os.path.join(full_data_dir, f"{symbol}.csv")
+        price_file = os.path.join(full_data_dir, file)
         if not os.path.exists(price_file):
             continue
 
         try:
-            df = pd.read_csv(price_file)
+            if is_parquet:
+                df = pd.read_parquet(price_file, engine="pyarrow")
+            else:
+                df = pd.read_csv(price_file)
 
             df["Date"] = pd.to_datetime(df["Date"], utc=True, errors="coerce").dt.tz_convert(None)
             df = df.sort_values("Date")
@@ -397,13 +573,16 @@ def build_download_csv(tf, ma_type_filter, crossover_filter, fast_mas, slow_mas,
 
     for nifty_symbol in nifty_candidates:
 
-        nifty_file = os.path.join(full_data_dir, f"{nifty_symbol}.csv")
-
-        if not os.path.exists(nifty_file):
-            continue
+        nifty_file_pq = os.path.join(full_data_dir, f"{nifty_symbol}.parquet")
+        nifty_file_csv = os.path.join(full_data_dir, f"{nifty_symbol}.csv")
 
         try:
-            nifty_df = pd.read_csv(nifty_file)
+            if os.path.exists(nifty_file_pq):
+                nifty_df = pd.read_parquet(nifty_file_pq, engine="pyarrow")
+            elif os.path.exists(nifty_file_csv):
+                nifty_df = pd.read_csv(nifty_file_csv)
+            else:
+                continue
 
             nifty_df["Date"] = pd.to_datetime(
                 nifty_df["Date"], utc=True, errors="coerce"
@@ -524,165 +703,162 @@ if refresh_btn:
     st.session_state.screener_active = False
     st.rerun()
 
-# ---------- BUILD SUMMARY TABLE (BEST STRATEGY PER STOCK) ----------
-rows = []
-symbols_to_process = []
+# ================================================================
+# PASS 1 — UNIVERSE PREPARATION
+# Load cached datasets, apply universe filter, collect all eligible
+# stocks. No screener / min_trades filtering yet.
+# ================================================================
+import time as _time
+_t0 = _time.perf_counter()
 
-# First pass: Collect data and filter by universe/trades
-# Target suffix based on lookback
-target_suffix = f"_{years}y_dynamic_trend_noise_optimization.csv"
+# Compute directory mtimes — used as cache keys for auto-invalidation
+_processed_dir = os.path.join(BASE_DIR, "data", "processed")
+data_mtime    = get_dir_mtime(_processed_dir, ".parquet") or get_dir_mtime(_processed_dir, ".csv")
+reports_mtime = get_dir_mtime(reports_dir, ".csv")
+
+# Load report + price caches (disk only on first call or after data update)
+reports_cache = load_all_reports(years, reports_mtime)
+_t_reports = _time.perf_counter()
+
+price_data = load_all_price_data(timeframe, data_mtime)
+_t_prices = _time.perf_counter()
+
+target_suffix        = f"_{years}y_dynamic_trend_noise_optimization.csv"
+all_universe_rows    = []   # {raw_name, symbol, best} for every universe-eligible stock
+all_universe_symbols = []   # symbol strings for the crossover batch
 
 for file in os.listdir(reports_dir):
-    if file.endswith(target_suffix):
-        # Original logic assumes symbol is filename. However, indices have spaces.
-        # But report generation replaces spaces with underscores? We need to verify how reports are named.
-        # Let's assume reports are generated with sanitized names.
-        # If fetch-data saves as "Nifty 50.csv", then optimization might save as "Nifty 50_dynamic..."
-        # or "Nifty_50_dynamic..."
-        
-        # Current logic: symbol = file.replace("_dynamic...", "").replace("_", ".")
-        # This breaks for indices like "Nifty 50" -> "Nifty.50" which is wrong.
-        # We need a robust reverse mapping or standardized naming.
-        
-        # INVESTIGATION: symbols in constants.py are "Nifty 50".
-        # fetch-data-upstox saves as "Nifty 50.csv".
-        # optimize_on_dynamic_noise.py likely uses the filename stem.
-        # if file is "Nifty 50.csv", stem is "Nifty 50".
-        # report file would be "Nifty 50_dynamic..."
-        
-        # BUT the code at line 181 does: symbol = file.replace(...).replace("_", ".")
-        # This was probably for "RELIANCE_NS" -> "RELIANCE.NS" or similar?
-        # No, upstox symbols are like "RELIANCE.NS" -> saved as "RELIANCE.NS.csv"??
-        # fetch-data-upstox.py Line 64: df.to_csv(..., f"{symbol}.csv")
-        # SYMBOL_MAP keys are "RELIANCE.NS". So file is "RELIANCE.NS.csv".
-        # optimize code likely produces "RELIANCE_NS_dynamic..." due to some sanitization?
-        # Let's look at `optimize_on_dynamic_noise.py` to be sure, but for now apply logic:
-        
-        raw_name = file.replace(target_suffix, "")
-        # If it was "RELIANCE.NS", it might be "RELIANCE_NS" in report filename if sanitizer used.
-        # The existing code replcaes "_" with "."
-        # That converts "Nifty_50" -> "Nifty.50". 
-        
-        # We need to handle this.
-        # Let's reconstruct symbol.
-        if "Nifty" in raw_name: # Simple heuristic for indices
-             # Indices usually don't have dots. They might have spaces.
-             # If report replaced space with _, we need to reverse it.
-             # BUT existing code blindly does replace("_", ".")
-             
-             # If universe is indices, we should be careful.
-             pass
-        
-        symbol = raw_name.replace("_", ".") # Default behavior
-        
-        # Filter by Universe
-        if universe == "Nifty 50":
-            base_symbol = symbol.split(".")[0]
-            if base_symbol not in NIFTY_50_SYMBOLS:
-                continue
-        elif universe == "F&O":
-            base_symbol = symbol.split(".")[0]
-            if base_symbol not in FNO_STOCKS:
-                continue
-        elif universe == "Indices":
-            # For Indices, we need to match against INDICES list.
-            # The symbol from report might be "Nifty.50" (if "Nifty 50" -> "Nifty_50" -> "Nifty.50")
-            # OR "Nifty 50" (if spaces preserved).
-            # The replace("_", ".") is dangerous if filenames have underscores for spaces.
-            
-            # Let's try to match loosely.
-            # Convert symbol back to potential space-sep format?
-            
-            # Better approach: check if any index in INDICES matches the symbol (ignoring dot/underscore diffs)
-            
-            # Normalize for check
-            norm_symbol = symbol.replace(".", " ").replace("_", " ")
-            # "Nifty.50" -> "Nifty 50"
-            
-            is_index = False
-            real_index_name = ""
-            for idx in INDICES:
-                if idx == norm_symbol or idx == symbol:
-                    is_index = True
-                    real_index_name = idx
-                    break
-            
-            if not is_index:
-                continue
-                
-            # If it is an index, use the clean name for display
-            symbol = real_index_name 
+    if not file.endswith(target_suffix):
+        continue
 
-        elif universe == "All NSE":
-            # Show everything except Indices?
-            # Or just show everything?
-            # Typically "All NSE" implies all stocks.
-            # We should probably filter out indices to avoid clutter if they are mixed in.
-            
-            # Check if it's an index
-            if symbol in INDICES:
-                continue
-            
-            # Also check if base symbol is in INDICES (e.g. "Nifty 50" from "Nifty.50")
-            base_norm = symbol.replace(".", " ")
-            if base_norm in INDICES:
-                continue
-                
-        else: # NSE 500 (Default)
-            # If NSE 500, we might want to EXCLUDE indices?
-            # Or just show everything that isn't filtered out?
-            # Usually NSE 500 implies stocks.
-            # Check if it IS in INDICES, if so, skip?
-            # For now, let's just let it be, or strictly filter?
-            # Let's exclude recognized indices from NSE 500 view to keep it clean.
-            
-            start_name = symbol.split(".")[0].replace("_", " ")
-            if start_name in INDICES or symbol in INDICES:
-                 continue
+    raw_name = file.replace(target_suffix, "")
+    if "Nifty" in raw_name:   # heuristic: index names may have underscore-for-space
+        pass
+    symbol = raw_name.replace("_", ".")   # e.g. RELIANCE_NS → RELIANCE.NS
 
-
-        rep = pd.read_csv(os.path.join(reports_dir, file))
-        best = rep.iloc[0]
-        
-        if st.session_state.screener_active:
-            target_pair = f"{st.session_state.scr_fast_ma}/{st.session_state.scr_slow_ma}"
-            if best["MA_Pair"] != target_pair:
-                continue
-            if st.session_state.scr_ma_type != "Both" and best["MA_Type"] != st.session_state.scr_ma_type:
-                continue
-                
-        trades = int(best["Trades"])
-        
-        # Filter by Min Trades 
-        if trades < min_trades:
+    # ── Universe filter ─────────────────────────────────────────────
+    if universe == "Nifty 50":
+        if symbol.split(".")[0] not in NIFTY_50_SYMBOLS:
             continue
+    elif universe == "F&O":
+        if symbol.split(".")[0] not in FNO_STOCKS:
+            continue
+    elif universe == "Indices":
+        norm_symbol = symbol.replace(".", " ").replace("_", " ")
+        is_index, real_index_name = False, ""
+        for idx in INDICES:
+            if idx == norm_symbol or idx == symbol:
+                is_index, real_index_name = True, idx
+                break
+        if not is_index:
+            continue
+        symbol = real_index_name
+    elif universe == "All NSE":
+        if symbol in INDICES or symbol.replace(".", " ") in INDICES:
+            continue
+    else:   # NSE 500 (default)
+        start_name = symbol.split(".")[0].replace("_", " ")
+        if start_name in INDICES or symbol in INDICES:
+            continue
+    # ─────────────────────────────────────────────────────────────────
 
-        symbols_to_process.append(symbol)
-        
-        # Win Rate formatting
-        win_rate = best["WinRate"]
-        if win_rate > 1:
-            win_rate /= 100
-        wins = int(round(win_rate * trades))
-        win_rate_str = f"{round(win_rate * 100, 1)}% ({wins}/{trades})"
+    best = reports_cache.get(raw_name)
+    if best is None:
+        continue
 
-        # F&O Indicator
-        base_symbol_clean = symbol.split(".")[0]
-        display_symbol = f"{symbol} *" if base_symbol_clean in FNO_STOCKS else symbol
+    all_universe_rows.append({"raw_name": raw_name, "symbol": symbol, "best": best})
+    all_universe_symbols.append(symbol)
 
-        rows.append({
-            "Symbol": display_symbol,
-            "RawSymbol": symbol,
-            "Best MA Type": best["MA_Type"],
-            "Best MA Pair": best["MA_Pair"],
-            "Return (%)": round(best["Return"], 2),
-            "Win Rate (%)": win_rate_str,
-            "RawWinRate": win_rate, # For sorting
-            "Sharpe": round(best["Sharpe"], 2),
-            "Sigma (Market)": best.get("MarketSigma", best.get("volatility", 0)), # Backward compat check
-            "Strategy Vol": round(best.get("StrategyAggr", best.get("Volatility", 0)), 2),
-            "Trades": trades
-        })
+# Compute crossovers for the FULL universe.
+# - Default mode: use each stock's own best historical MA pair.
+# - Screener mode: use the user-selected pair for ALL stocks (matches Excel logic).
+with st.spinner("Calculating crossovers..."):
+    if st.session_state.screener_active:
+        crossover_map_all = calculate_crossovers_with_pair(
+            tuple(all_universe_symbols),
+            timeframe,
+            st.session_state.scr_fast_ma,
+            st.session_state.scr_slow_ma,
+            st.session_state.scr_ma_type,
+            data_mtime,
+        )
+    else:
+        crossover_map_all = calculate_crossovers(
+            tuple(all_universe_symbols),
+            timeframe,
+            years,
+            data_mtime,
+        )
+_t_cross = _time.perf_counter()
+
+# ⏱ Sidebar profiling — shows timing for last run
+st.sidebar.markdown("---")
+st.sidebar.caption(
+    f"⏱ Reports: {_t_reports - _t0:.2f}s | "
+    f"Prices: {_t_prices - _t_reports:.2f}s | "
+    f"Crossovers: {_t_cross - _t_prices:.2f}s"
+)
+
+# ================================================================
+# PASS 2 — SCREENER EVALUATION
+# Apply min_trades filter. In screener mode, ALL universe stocks are
+# included (crossovers already computed on the selected pair above).
+# ================================================================
+rows               = []
+symbols_to_process = []
+
+for item in all_universe_rows:
+    symbol   = item["symbol"]
+    best     = item["best"]
+
+    # In screener mode we no longer drop stocks whose Best MA != selected pair.
+    # Crossovers were already computed using the selected pair for every stock.
+
+    # ── Min Trades filter ──────────────────────────────────────────
+    trades = int(best["Trades"])
+    if trades < min_trades:
+        continue
+
+    symbols_to_process.append(symbol)
+
+    win_rate = best["WinRate"]
+    if win_rate > 1:
+        win_rate /= 100
+    wins = int(round(win_rate * trades))
+    win_rate_str = f"{round(win_rate * 100, 1)}% ({wins}/{trades})"
+
+    base_symbol_clean = symbol.split(".")[0]
+    display_symbol = f"{symbol} *" if base_symbol_clean in FNO_STOCKS else symbol
+
+    # In screener mode, show the user-selected pair that generated the crossover.
+    # In default mode, show the stock's own optimised pair (same pair used for crossover calc).
+    if st.session_state.screener_active:
+        crossover_ma_type = st.session_state.scr_ma_type
+        crossover_ma_pair = f"{st.session_state.scr_fast_ma}/{st.session_state.scr_slow_ma}"
+    else:
+        crossover_ma_type = best["MA_Type"]
+        crossover_ma_pair = best["MA_Pair"]
+
+    rows.append({
+        "Symbol":            display_symbol,
+        "RawSymbol":         symbol,
+        "Crossover MA Type": crossover_ma_type,
+        "Crossover MA Pair": crossover_ma_pair,
+        "Return (%)":        round(best["Return"], 2),
+        "Win Rate (%)": win_rate_str,
+        "RawWinRate":        win_rate,
+        "Sharpe":            round(best["Sharpe"], 2),
+        "Sigma (Market)":   best.get("MarketSigma", best.get("volatility", 0)),
+        "Strategy Vol":      round(best.get("StrategyAggr", best.get("Volatility", 0)), 2),
+        "Trades":            trades,
+    })
+
+# Subset crossovers — O(1) dict lookup, zero recomputation
+crossover_map = {
+    s: crossover_map_all[s]
+    for s in symbols_to_process
+    if s in crossover_map_all
+}
 
 if not rows:
     if st.session_state.screener_active:
@@ -690,17 +866,6 @@ if not rows:
     else:
         st.info("No report files found yet. Run the data pipeline from the sidebar to generate reports.")
 
-# Compute crossovers (ALWAYS calc for sorting)
-with st.spinner("Calculating crossovers..."):
-    crossover_map = calculate_crossovers(
-        symbols_to_process, 
-        timeframe, 
-        years,
-        st.session_state.screener_active,
-        st.session_state.scr_ma_type,
-        st.session_state.scr_fast_ma,
-        st.session_state.scr_slow_ma
-    )
 
 # Add crossover data to rows
 for row in rows:
@@ -810,7 +975,12 @@ if has_selection:
     selected_symbol = display_symbol.replace(" *", "")
 
     st.markdown("---")
-    st.subheader(f"📈 Price Chart ({timeframe})")
+    
+    col_chart_title, col_chart_lookback = st.columns([3, 1])
+    with col_chart_title:
+        st.subheader(f"📈 Price Chart ({timeframe})")
+    with col_chart_lookback:
+        graph_lookback = st.selectbox("Graph Lookback", ["1 Month", "3 Months", "1 Year", "5 Years"], index=1)
     
     # ---------- SCENARIO CONTROLS (WHAT-IF MODE) ----------
     st.markdown("### 🔎 Strategy to Display")
@@ -829,35 +999,28 @@ if has_selection:
             st.warning("Fast MA must be smaller than Slow MA")
             st.stop()
     else:
-        best_ma_type = summary_df.iloc[selected_row_idx]["Best MA Type"]
-        best_ma_pair = summary_df.iloc[selected_row_idx]["Best MA Pair"]
+        best_ma_type = summary_df.iloc[selected_row_idx]["Crossover MA Type"]
+        best_ma_pair = summary_df.iloc[selected_row_idx]["Crossover MA Pair"]
         
         try:
             fast_viz, slow_viz = map(int, best_ma_pair.split("/"))
-            ma_type_viz = best_ma_type
+            # "Both" is not a valid MA type for plotting — default to EMA
+            ma_type_viz = best_ma_type if best_ma_type in ("EMA", "SMA") else "EMA"
         except:
             fast_viz, slow_viz = 12, 26
             ma_type_viz = "EMA"
 
     
-    # Use full processed data for plotting to match optimization scope
-    full_data_dir = os.path.join(BASE_DIR, "data", "processed")
-    price_file = os.path.join(full_data_dir, f"{selected_symbol}.csv")
-
-    if not os.path.exists(price_file):
+    # ---------- LOAD PRICE DATA (from preloaded cache) ----------
+    # price_data is already in memory — this is a cache lookup, not a disk read.
+    df = price_data.get(selected_symbol)
+    if df is None:
         st.error("Price data not found for this stock.")
         st.stop()
+    # Always copy before adding computed columns — never mutate cached objects
+    df = df.copy()
+    # Data is already sorted and (if Weekly) resampled by load_all_price_data
 
-    # ---------- LOAD PRICE DATA ----------
-    df = pd.read_csv(price_file)
-    df["Date"] = pd.to_datetime(df["Date"], utc=True, errors="coerce").dt.tz_convert(None)
-    
-    # Filter by selected lookback years for the chart too
-    # REVISION: User wants the graph to ONLY show the last 3 months, regardless of optimization lookback.
-    # However, we must calculate features on FULL data first so MAs (e.g. 200) are valid, then slice.
-    
-    # 1. Sort Full Data
-    df = df.sort_values("Date")
     
     # 2. Slice to last 3 months for Visualization
     # We use a fixed 3-month window for the graph as requested, 
@@ -921,10 +1084,18 @@ if has_selection:
     fast_ma = fast_viz
     slow_ma = slow_viz
 
-    # REVISION: Slice to last 3 months for Visualization Only
+    # REVISION: Slice for Visualization Only
     # Data has full history here, so MAs and Signals are accurate.
-    # Now we just zoom in.
-    metrics_lookback_date = df["Date"].max() - pd.DateOffset(months=3)
+    # Now we just zoom in based on selected lookback.
+    if graph_lookback == "1 Month":
+        metrics_lookback_date = df["Date"].max() - pd.DateOffset(months=1)
+    elif graph_lookback == "3 Months":
+        metrics_lookback_date = df["Date"].max() - pd.DateOffset(months=3)
+    elif graph_lookback == "1 Year":
+        metrics_lookback_date = df["Date"].max() - pd.DateOffset(years=1)
+    elif graph_lookback == "5 Years":
+        metrics_lookback_date = df["Date"].max() - pd.DateOffset(years=5)
+        
     df = df[df["Date"] >= metrics_lookback_date]
 
     # ---------- PLOT ----------

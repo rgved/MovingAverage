@@ -5,6 +5,8 @@ matplotlib
 fastapi
 uvicorn
 yfinance
-python-dotenv 
+python-dotenv
 requests
 plotly
+pyarrow>=16.1.0
+fastparquet

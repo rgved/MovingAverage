@@ -3,7 +3,7 @@ import json
 import requests
 import pandas as pd
 from dotenv import load_dotenv
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, date
 
 # Load API token
 load_dotenv()
@@ -27,47 +27,179 @@ os.makedirs(DATA_DIR, exist_ok=True)
 with open(os.path.join(BASE_DIR, "upstox_symbol_map.json")) as f:
     SYMBOL_MAP = json.load(f)
 
-def fetch_history(symbol, instrument_key, days=1095):
-    os.makedirs(DATA_DIR, exist_ok=True)
+# ── Constants ────────────────────────────────────────────────────────────────
+BOOTSTRAP_DAYS = 92          # ~3 months for a fresh fetch
+STALE_THRESHOLD_DAYS = 14    # if last date is older than this, do a full re-fetch
+INCREMENTAL_BUFFER_DAYS = 5  # fetch a few extra days as buffer for weekends/holidays
 
-    to_date = (datetime.today() + timedelta(days=1)).date()
-    from_date = to_date - timedelta(days=days)
 
-    print(f"Fetching {symbol}: {from_date} -> {to_date}")
-
+def _fetch_candles(instrument_key: str, from_date: date, to_date: date) -> list:
+    """Raw API call — returns list of candles or empty list on failure."""
     url = (
         "https://api.upstox.com/v2/historical-candle/"
         f"{instrument_key}/day/{to_date}/{from_date}"
     )
-
     response = requests.get(url, headers=HEADERS)
-
     if response.status_code != 200:
-        print(f"X {symbol} | {response.status_code} | {response.text}")
-        return
+        print(f"  API error {response.status_code}: {response.text[:120]}")
+        return []
+    return response.json().get("data", {}).get("candles", [])
 
-    candles = response.json().get("data", {}).get("candles", [])
 
-    if not candles:
-        print(f"! No data for {symbol}")
-        return
-
+def _candles_to_df(candles: list) -> pd.DataFrame:
+    """Convert raw candle list to a clean DataFrame."""
     df = pd.DataFrame(
         candles,
         columns=["Date", "Open", "High", "Low", "Close", "Volume", "OI"]
     )
-
     df = df.drop(columns=["OI"])
+    # Strip timezone info but preserve the exact IST date instead of shifting to UTC
+    # Upstox returns "2026-05-18T00:00:00+05:30". Converting this to UTC would shift it to 
+    # the previous day (2026-05-17 18:30:00).
     df["Date"] = pd.to_datetime(df["Date"])
-    df = df.sort_values("Date")
+    if df["Date"].dt.tz is not None:
+        df["Date"] = df["Date"].dt.tz_convert("Asia/Kolkata").dt.tz_localize(None)
+    df = df.sort_values("Date").reset_index(drop=True)
+    return df
 
-    df.to_csv(os.path.join(DATA_DIR, f"{symbol}.csv"), index=False)
-    print(f"OK Saved {symbol} ({len(df)} rows)")
+
+def _load_existing(symbol: str) -> pd.DataFrame | None:
+    """Load the existing raw CSV for a symbol, or return None if it doesn't exist."""
+    path = os.path.join(DATA_DIR, f"{symbol}.csv")
+    if not os.path.exists(path):
+        return None
+    try:
+        df = pd.read_csv(path)
+        df["Date"] = pd.to_datetime(df["Date"])
+        df = df.sort_values("Date").reset_index(drop=True)
+        return df
+    except Exception as e:
+        print(f"  Warning: could not read existing file for {symbol}: {e}")
+        return None
 
 
+def fetch_history(symbol: str, instrument_key: str):
+    """
+    Smart fetch with two modes:
+
+    BOOTSTRAP  — No raw file exists (or file is stale > STALE_THRESHOLD_DAYS):
+                  Fetch the last BOOTSTRAP_DAYS (~3 months) from the API.
+                  This is the first-time setup for a symbol.
+
+    INCREMENTAL — Raw file exists and is fresh:
+                  Fetch only the days missing since the last stored date,
+                  merge with existing data, deduplicate, and save.
+                  Skips entirely if the file is already up-to-date.
+    """
+    today = datetime.today().date()
+    to_date = today + timedelta(days=1)   # Upstox to_date is exclusive
+    
+    out_path = os.path.join(DATA_DIR, f"{symbol}.csv")
+
+    # Fast-path: If the file was modified/checked today, skip entirely!
+    if os.path.exists(out_path):
+        mtime = datetime.fromtimestamp(os.path.getmtime(out_path)).date()
+        if mtime == today:
+            print(f"[UP-TO-DATE] {symbol}: checked today, skipping.")
+            return
+
+    existing_df = _load_existing(symbol)
+
+    # ── Decide fetch mode ────────────────────────────────────────────────────
+    if existing_df is None or existing_df.empty:
+        # BOOTSTRAP: no data at all
+        mode = "bootstrap"
+        from_date = today - timedelta(days=BOOTSTRAP_DAYS)
+        print(f"[BOOTSTRAP ] {symbol}: no existing data -> fetching {BOOTSTRAP_DAYS}d ({from_date} -> {today})")
+
+    else:
+        last_stored_date = existing_df["Date"].max().date()
+        days_since_update = (today - last_stored_date).days
+
+        if days_since_update <= 0:
+            # Already up-to-date — nothing to do
+            print(f"[UP-TO-DATE] {symbol}: last date={last_stored_date}, skipping.")
+            return
+
+        if days_since_update > STALE_THRESHOLD_DAYS:
+            # File exists but is too old — re-fetch full 3 months to be safe
+            mode = "bootstrap"
+            from_date = today - timedelta(days=BOOTSTRAP_DAYS)
+            print(
+                f"[STALE     ] {symbol}: last date={last_stored_date} "
+                f"({days_since_update}d ago) -> full re-fetch ({from_date} -> {today})"
+            )
+        else:
+            # INCREMENTAL: fetch only the missing window
+            mode = "incremental"
+            # Start from last stored date (inclusive) with a small buffer
+            from_date = last_stored_date - timedelta(days=INCREMENTAL_BUFFER_DAYS)
+            print(
+                f"[INCREMENTAL] {symbol}: last date={last_stored_date} "
+                f"-> fetching {from_date} -> {today}"
+            )
+
+    # ── Fetch from API ───────────────────────────────────────────────────────
+    candles = _fetch_candles(instrument_key, from_date, to_date)
+
+    if not candles:
+        print(f"  ! No new candles returned for {symbol}.")
+        # Touch the file to update its modified time so we know we checked it today
+        if os.path.exists(out_path):
+            os.utime(out_path, None)
+        return
+
+    new_df = _candles_to_df(candles)
+
+    # ── Merge & deduplicate ──────────────────────────────────────────────────
+    if mode == "incremental" and existing_df is not None and not existing_df.empty:
+        # Ensure both sides are tz-naive before concat
+        existing_df["Date"] = pd.to_datetime(existing_df["Date"]).dt.tz_localize(None)
+        new_df["Date"] = new_df["Date"].dt.tz_localize(None) if new_df["Date"].dt.tz is not None else new_df["Date"]
+        combined = pd.concat([existing_df, new_df], ignore_index=True)
+        # Normalise to date-only for dedup (Upstox candles are start-of-day anyway)
+        combined["Date"] = combined["Date"].dt.normalize()
+        # Keep the latest record per date in case of overlap
+        combined = (
+            combined
+            .sort_values("Date")
+            .drop_duplicates(subset="Date", keep="last")
+            .reset_index(drop=True)
+        )
+    else:
+        combined = new_df
+        combined["Date"] = combined["Date"].dt.normalize()
+
+    # ── Save ─────────────────────────────────────────────────────────────────
+    out_path = os.path.join(DATA_DIR, f"{symbol}.csv")
+    combined.to_csv(out_path, index=False)
+    new_rows = len(new_df)
+    total_rows = len(combined)
+    print(f"  OK Saved {symbol}: +{new_rows} new rows | {total_rows} total rows")
+
+
+import concurrent.futures
+
+# ── Entry point ──────────────────────────────────────────────────────────────
 if __name__ == "__main__":
     total_symbols = len(SYMBOL_MAP)
-    for idx, (sym, key) in enumerate(SYMBOL_MAP.items(), 1):
-        fetch_history(sym, key)
-        print(f"PROGRESS:{idx}/{total_symbols}", flush=True)
-
+    
+    def process_symbol(args):
+        sym, key = args
+        try:
+            fetch_history(sym, key)
+        except Exception as e:
+            print(f"  Error processing {sym}: {e}")
+            
+    items = list(SYMBOL_MAP.items())
+    
+    # Use ThreadPoolExecutor to run up to 3 fetches concurrently (avoid 429 rate limit)
+    with concurrent.futures.ThreadPoolExecutor(max_workers=3) as executor:
+        # Submit all tasks
+        futures = {executor.submit(process_symbol, item): item for item in items}
+        
+        # Track completion
+        for idx, future in enumerate(concurrent.futures.as_completed(futures), 1):
+            # We print progress, but individual print statements from fetch_history 
+            # might interleave slightly. This is fine for CLI feedback.
+            print(f"PROGRESS:{idx}/{total_symbols}", flush=True)

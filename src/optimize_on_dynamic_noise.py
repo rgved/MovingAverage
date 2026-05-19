@@ -67,11 +67,19 @@ def optimize_dynamic_trend_noise(symbol, ma_pairs=None, years=1):
 
     print(f"\n Running optimization for {symbol} ({years}Y)")
 
-    file_path = os.path.join(DATA_DIR, f"{symbol}.csv")
-    if not os.path.exists(file_path):
-        raise FileNotFoundError(f"Missing data: {file_path}")
+    parquet_path = os.path.join(DATA_DIR, f"{symbol}.parquet")
+    csv_path     = os.path.join(DATA_DIR, f"{symbol}.csv")
+    if os.path.exists(parquet_path):
+        file_path = parquet_path
+    elif os.path.exists(csv_path):
+        file_path = csv_path
+    else:
+        raise FileNotFoundError(f"Missing data for {symbol} (tried .parquet and .csv)")
 
-    df = pd.read_csv(file_path)
+    if file_path.endswith(".parquet"):
+        df = pd.read_parquet(file_path, engine="pyarrow")
+    else:
+        df = pd.read_csv(file_path)
     df["Date"] = pd.to_datetime(df["Date"])
 
     # Use X years of data
