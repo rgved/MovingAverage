@@ -249,23 +249,32 @@ def load_all_price_data(tf: str, data_mtime: float) -> dict:
 
 
 # ---------- CACHED CROSSOVER CALCULATION ----------
-# IMPORTANT: This function ALWAYS uses the report's best MA strategy to compute crossovers.
+# Scans ALL MA pair combinations to find the most recent crossover per stock.
 # Used in default (non-screener) mode.
+
+# All valid MA pairs to scan (fast < slow)
+_FAST_MAS = [5, 10, 12, 20, 50]
+_SLOW_MAS = [20, 26, 50, 100, 200]
+_ALL_MA_PAIRS = [(f, s) for f in _FAST_MAS for s in _SLOW_MAS if f < s]
+_ALL_MA_TYPES = ["EMA", "SMA"]
+
 @st.cache_data
 def calculate_crossovers(stock_list: tuple, tf: str, years: int,
-                         data_mtime: float) -> dict:
+                         data_mtime: float, reports_mtime: float) -> dict:
     """
-    Calculate the most recent MA crossover for each stock using ONLY the stock's
-    own optimized MA pair from its report file.
+    Calculate the most recent MA crossover for each stock by scanning ALL
+    MA pair combinations (fast/slow × EMA/SMA).
+
+    Returns the most recent crossover from ANY pair, along with which
+    MA type and pair produced it.
 
     stock_list MUST be a tuple so Streamlit can hash it as a cache key.
-    Stocks are processed in parallel via ThreadPoolExecutor.
-    data_mtime auto-invalidates the cache when the pipeline writes new data.
+    data_mtime + reports_mtime auto-invalidate the cache when the pipeline
+    writes new data.
     """
     from concurrent.futures import ThreadPoolExecutor, as_completed
 
-    reports_cache = load_all_reports(years, data_mtime)
-    price_data    = load_all_price_data(tf, data_mtime)
+    price_data = load_all_price_data(tf, data_mtime)
 
     def process_one(symbol):
         df_cached = price_data.get(symbol)
@@ -273,46 +282,41 @@ def calculate_crossovers(stock_list: tuple, tf: str, years: int,
             return symbol, None
         df = df_cached.copy()
         try:
-            raw_name = symbol.replace(".", "_")
-            best = reports_cache.get(raw_name)
-            if best is None:
-                return symbol, None
-
-            fast, slow = map(int, best["MA_Pair"].split("/"))
-            ma_types_to_check = [best["MA_Type"]]
-
             best_crossover_date = pd.Timestamp.min
             best_crossover_data = None
 
-            for m_type in ma_types_to_check:
-                if m_type == "EMA":
-                    ma_fast = df["Close"].ewm(span=fast, adjust=False).mean()
-                    ma_slow = df["Close"].ewm(span=slow, adjust=False).mean()
-                else:
-                    ma_fast = df["Close"].rolling(fast).mean()
-                    ma_slow = df["Close"].rolling(slow).mean()
+            for fast, slow in _ALL_MA_PAIRS:
+                for m_type in _ALL_MA_TYPES:
+                    if m_type == "EMA":
+                        ma_fast = df["Close"].ewm(span=fast, adjust=False).mean()
+                        ma_slow = df["Close"].ewm(span=slow, adjust=False).mean()
+                    else:
+                        ma_fast = df["Close"].rolling(fast).mean()
+                        ma_slow = df["Close"].rolling(slow).mean()
 
-                raw_signal     = np.where(ma_fast > ma_slow, 1, -1)
-                crossover_diff = pd.Series(raw_signal).diff().fillna(0)
+                    raw_signal     = np.where(ma_fast > ma_slow, 1, -1)
+                    crossover_diff = pd.Series(raw_signal).diff().fillna(0)
 
-                temp_df = df.copy()
-                temp_df["Crossover"] = crossover_diff.values
-                crossovers = temp_df[temp_df["Crossover"].abs() == 2]
+                    temp_df = df.copy()
+                    temp_df["Crossover"] = crossover_diff.values
+                    crossovers = temp_df[temp_df["Crossover"].abs() == 2]
 
-                if not crossovers.empty:
-                    last_row       = crossovers.iloc[-1]
-                    last_date      = last_row["Date"]
-                    crossover_type = "Bullish" if last_row["Crossover"] == 2 else "Bearish"
-                    three_months_ago = temp_df["Date"].max() - pd.DateOffset(months=3)
-                    recent_trades  = len(crossovers[crossovers["Date"] >= three_months_ago])
+                    if not crossovers.empty:
+                        last_row       = crossovers.iloc[-1]
+                        last_date      = last_row["Date"]
+                        crossover_type = "Bullish" if last_row["Crossover"] == 2 else "Bearish"
+                        three_months_ago = temp_df["Date"].max() - pd.DateOffset(months=3)
+                        recent_trades  = len(crossovers[crossovers["Date"] >= three_months_ago])
 
-                    if last_date > best_crossover_date:
-                        best_crossover_date = last_date
-                        best_crossover_data = {
-                            "Recent Bullish Crossover": last_date,
-                            "Recent 3M Trades":         recent_trades,
-                            "Crossover Type":           crossover_type,
-                        }
+                        if last_date > best_crossover_date:
+                            best_crossover_date = last_date
+                            best_crossover_data = {
+                                "Recent Bullish Crossover": last_date,
+                                "Recent 3M Trades":         recent_trades,
+                                "Crossover Type":           crossover_type,
+                                "Crossover MA Type":        m_type,
+                                "Crossover MA Pair":        f"{fast}/{slow}",
+                            }
 
             return symbol, best_crossover_data
         except Exception:
@@ -330,7 +334,7 @@ def calculate_crossovers(stock_list: tuple, tf: str, years: int,
             except Exception:
                 pass
 
-    print(f"[CROSSOVER] Done: {len(crossover_data)}/{len(stock_list)} stocks.")
+    print(f"[CROSSOVER ALL PAIRS] Done: {len(crossover_data)}/{len(stock_list)} stocks.")
     return crossover_data
 
 
@@ -396,6 +400,8 @@ def calculate_crossovers_with_pair(
                             "Recent Bullish Crossover": last_date,
                             "Recent 3M Trades":         recent_trades,
                             "Crossover Type":           crossover_type,
+                            "Crossover MA Type":        m_type,
+                            "Crossover MA Pair":        f"{fast}/{slow}",
                         }
 
             return symbol, best_crossover_data
@@ -770,8 +776,8 @@ for file in os.listdir(reports_dir):
     all_universe_symbols.append(symbol)
 
 # Compute crossovers for the FULL universe.
-# - Default mode: use each stock's own best historical MA pair.
-# - Screener mode: use the user-selected pair for ALL stocks (matches Excel logic).
+# - Default mode: scan ALL MA pairs, show most recent crossover from any pair.
+# - Screener mode: filter to the user-selected pair only.
 with st.spinner("Calculating crossovers..."):
     if st.session_state.screener_active:
         crossover_map_all = calculate_crossovers_with_pair(
@@ -788,6 +794,7 @@ with st.spinner("Calculating crossovers..."):
             timeframe,
             years,
             data_mtime,
+            reports_mtime,
         )
 _t_cross = _time.perf_counter()
 
@@ -830,20 +837,9 @@ for item in all_universe_rows:
     base_symbol_clean = symbol.split(".")[0]
     display_symbol = f"{symbol} *" if base_symbol_clean in FNO_STOCKS else symbol
 
-    # In screener mode, show the user-selected pair that generated the crossover.
-    # In default mode, show the stock's own optimised pair (same pair used for crossover calc).
-    if st.session_state.screener_active:
-        crossover_ma_type = st.session_state.scr_ma_type
-        crossover_ma_pair = f"{st.session_state.scr_fast_ma}/{st.session_state.scr_slow_ma}"
-    else:
-        crossover_ma_type = best["MA_Type"]
-        crossover_ma_pair = best["MA_Pair"]
-
     rows.append({
         "Symbol":            display_symbol,
         "RawSymbol":         symbol,
-        "Crossover MA Type": crossover_ma_type,
-        "Crossover MA Pair": crossover_ma_pair,
         "Return (%)":        round(best["Return"], 2),
         "Win Rate (%)": win_rate_str,
         "RawWinRate":        win_rate,
@@ -867,25 +863,30 @@ if not rows:
         st.info("No report files found yet. Run the data pipeline from the sidebar to generate reports.")
 
 
-# Add crossover data to rows
+# Add crossover data to rows (includes MA type/pair from the crossover itself)
 for row in rows:
     sym = row["RawSymbol"]
     if sym in crossover_map:
-        cross_date = crossover_map[sym]["Recent Bullish Crossover"]
+        cross_data = crossover_map[sym]
+        cross_date = cross_data["Recent Bullish Crossover"]
         if cross_date.year < 1900:
              row["Crossover Date"] = "-"
              row["Crossover Signal"] = "-"
         else:
              row["Crossover Date"] = str(cross_date.date())
-             row["Crossover Signal"] = crossover_map[sym].get("Crossover Type", "-")
+             row["Crossover Signal"] = cross_data.get("Crossover Type", "-")
+        row["Crossover MA Type"] = cross_data.get("Crossover MA Type", "-")
+        row["Crossover MA Pair"] = cross_data.get("Crossover MA Pair", "-")
         row["Recent Bullish Crossover"] = cross_date
         
         # Update Trades count to reflect only last 3 months
-        if "Recent 3M Trades" in crossover_map[sym]:
-            row["Trades"] = crossover_map[sym]["Recent 3M Trades"]
+        if "Recent 3M Trades" in cross_data:
+            row["Trades"] = cross_data["Recent 3M Trades"]
     else:
         row["Crossover Date"] = "-"
         row["Crossover Signal"] = "-"
+        row["Crossover MA Type"] = "-"
+        row["Crossover MA Pair"] = "-"
         row["Recent Bullish Crossover"] = pd.Timestamp.min
 
 summary_df = pd.DataFrame(rows)
@@ -905,9 +906,9 @@ if not summary_df.empty:
 # ---------- TABLE ----------
 table_title = "📊 Stock Performance Summary "
 if st.session_state.screener_active:
-    table_title += f"(Selected Strategy: {st.session_state.scr_ma_type if st.session_state.scr_ma_type != 'Both' else 'Any MA Type'} {st.session_state.scr_fast_ma}/{st.session_state.scr_slow_ma})"
+    table_title += f"(Filtered: {st.session_state.scr_ma_type if st.session_state.scr_ma_type != 'Both' else 'Any MA Type'} {st.session_state.scr_fast_ma}/{st.session_state.scr_slow_ma})"
 else:
-    table_title += "(Best Historical Strategy)"
+    table_title += "(All MA Pairs)"
 
 st.subheader(table_title)
 
