@@ -157,7 +157,7 @@ timeframe = st.sidebar.selectbox("Timeframe", ["Daily", "Weekly"], index=0)
 universe = st.sidebar.radio("Universe", ["NSE 500", "Nifty 50", "F&O", "Indices", "All NSE"], index=0)
 
 # Min Trades Filter
-min_trades = st.sidebar.slider("Minimum Trades", 0, 50, 5)
+min_trades = st.sidebar.slider("Minimum Trades", 0, 50, 0)
 
 # ---------- HELPERS ----------
 def get_dir_mtime(dir_path: str, ext: str = ".parquet") -> float:
@@ -425,6 +425,116 @@ def calculate_crossovers_with_pair(
 
 
 @st.cache_data
+def build_crossover_event_rows(
+    stock_list: tuple,
+    tf: str,
+    target_date_iso: str,
+    ma_type: str,
+    fast_filter,
+    slow_filter,
+    signal_filter: str,
+    data_mtime: float,
+) -> list:
+    """
+    Build event-level crossover rows for a specific screening date.
+
+    Unlike the stock-summary helpers above, this returns every crossover event
+    that matches the selected date and filters, so the screener can start from
+    the complete event set and only then refine it.
+    """
+    from concurrent.futures import ThreadPoolExecutor, as_completed
+
+    price_data = load_all_price_data(tf, data_mtime)
+    target_date = pd.to_datetime(target_date_iso).date()
+
+    if fast_filter is not None and slow_filter is not None:
+        ma_pairs = [(fast_filter, slow_filter)] if fast_filter < slow_filter else []
+    else:
+        ma_pairs = []
+        for fast, slow in _ALL_MA_PAIRS:
+            if fast_filter is not None and fast != fast_filter:
+                continue
+            if slow_filter is not None and slow != slow_filter:
+                continue
+            ma_pairs.append((fast, slow))
+
+    types_to_check = ["EMA", "SMA"] if ma_type == "Both" else [ma_type]
+
+    def process_one(symbol):
+        df_cached = price_data.get(symbol)
+        if df_cached is None or df_cached.empty:
+            return []
+
+        df = df_cached.copy()
+        rows = []
+
+        try:
+            latest_date = df["Date"].max()
+            three_months_ago = latest_date - pd.DateOffset(months=3)
+
+            for fast, slow in ma_pairs:
+                for m_type in types_to_check:
+                    if m_type == "EMA":
+                        ma_fast = df["Close"].ewm(span=fast, adjust=False).mean()
+                        ma_slow = df["Close"].ewm(span=slow, adjust=False).mean()
+                    else:
+                        ma_fast = df["Close"].rolling(fast).mean()
+                        ma_slow = df["Close"].rolling(slow).mean()
+
+                    raw_signal = np.where(ma_fast > ma_slow, 1, -1)
+                    crossover_diff = pd.Series(raw_signal).diff().fillna(0)
+
+                    temp_df = df.copy()
+                    temp_df["Crossover"] = crossover_diff.values
+                    crossovers = temp_df[temp_df["Crossover"].abs() == 2].copy()
+
+                    if crossovers.empty:
+                        continue
+
+                    recent_trades = int((crossovers["Date"] >= three_months_ago).sum())
+
+                    for _, cross_row in crossovers.iterrows():
+                        cross_date = cross_row["Date"]
+                        if pd.isna(cross_date) or cross_date.date() != target_date:
+                            continue
+
+                        crossover_type = "Bullish" if cross_row["Crossover"] == 2 else "Bearish"
+                        if signal_filter != "Both" and crossover_type != signal_filter:
+                            continue
+
+                        rows.append({
+                            "RawSymbol": symbol,
+                            "Crossover Date": str(cross_date.date()),
+                            "Crossover Signal": crossover_type,
+                            "Crossover MA Type": m_type,
+                            "Crossover MA Pair": f"{fast}/{slow}",
+                            "Recent Bullish Crossover": cross_date,
+                            "Recent 3M Trades": recent_trades,
+                        })
+        except Exception:
+            return []
+
+        return rows
+
+    event_rows = []
+    workers = min(8, max(1, len(stock_list)))
+    with ThreadPoolExecutor(max_workers=workers) as executor:
+        futures = {executor.submit(process_one, s): s for s in stock_list}
+        for future in as_completed(futures):
+            try:
+                event_rows.extend(future.result())
+            except Exception:
+                pass
+
+    print(
+        f"[CROSSOVER EVENTS {target_date_iso} {ma_type} "
+        f"{fast_filter or 'ANY'}/{slow_filter or 'ANY'} {signal_filter}] "
+        f"Done: {len(event_rows)} events."
+    )
+    return event_rows
+
+
+@st.cache_data
 def build_download_csv(tf, ma_type_filter, crossover_filter, fast_mas, slow_mas, days_limit):
     """Build a market-breadth style export parameterized by custom MA selections."""
     
@@ -675,40 +785,15 @@ if "screener_active" not in st.session_state:
 if "scr_ma_type" not in st.session_state:
     st.session_state.scr_ma_type = "Both"
 if "scr_fast_ma" not in st.session_state:
-    st.session_state.scr_fast_ma = 20
+    st.session_state.scr_fast_ma = "Any"
 if "scr_slow_ma" not in st.session_state:
-    st.session_state.scr_slow_ma = 50
+    st.session_state.scr_slow_ma = "Any"
+if "scr_signal" not in st.session_state:
+    st.session_state.scr_signal = "Both"
+if "scr_date" not in st.session_state:
+    st.session_state.scr_date = None
 
-st.subheader("🎯 Refine Screener")
-with st.form("screener_form"):
-    c1, c2, c3 = st.columns(3)
-    with c1:
-        scr_ma_type_input = st.selectbox("MA Type", ["Both", "SMA", "EMA"], index=["Both", "SMA", "EMA"].index(st.session_state.scr_ma_type))
-    with c2:
-        scr_fast_ma_input = st.selectbox("Fast MA", options=[5, 10, 12, 20, 50], index=[5, 10, 12, 20, 50].index(st.session_state.scr_fast_ma))
-    with c3:
-        scr_slow_ma_input = st.selectbox("Slow MA", options=[20, 26, 50, 100, 200], index=[20, 26, 50, 100, 200].index(st.session_state.scr_slow_ma))
-        
-    colA, colB, _ = st.columns([1, 1.5, 3])
-    with colA:
-        refine_btn = st.form_submit_button("Refine Screener")
-    with colB:
-        refresh_btn = st.form_submit_button("Refresh")
-
-if refine_btn:
-    if scr_fast_ma_input >= scr_slow_ma_input:
-        st.warning("Fast MA must be smaller than Slow MA to filter properly.")
-    else:
-        st.session_state.screener_active = True
-        st.session_state.scr_ma_type = scr_ma_type_input
-        st.session_state.scr_fast_ma = scr_fast_ma_input
-        st.session_state.scr_slow_ma = scr_slow_ma_input
-        st.rerun()
-
-if refresh_btn:
-    st.session_state.screener_active = False
-    st.rerun()
-
+# Screener controls are rendered closer to the event table below.
 # ================================================================
 # PASS 1 — UNIVERSE PREPARATION
 # Load cached datasets, apply universe filter, collect all eligible
@@ -856,13 +941,6 @@ crossover_map = {
     if s in crossover_map_all
 }
 
-if not rows:
-    if st.session_state.screener_active:
-        st.info("No stocks found matching the Refine Screener criteria.")
-    else:
-        st.info("No report files found yet. Run the data pipeline from the sidebar to generate reports.")
-
-
 # Add crossover data to rows (includes MA type/pair from the crossover itself)
 for row in rows:
     sym = row["RawSymbol"]
@@ -909,6 +987,204 @@ if st.session_state.screener_active:
     table_title += f"(Filtered: {st.session_state.scr_ma_type if st.session_state.scr_ma_type != 'Both' else 'Any MA Type'} {st.session_state.scr_fast_ma}/{st.session_state.scr_slow_ma})"
 else:
     table_title += "(All MA Pairs)"
+
+# Override the stock-summary table with an event-driven screener dataset.
+def symbol_matches_event_universe(symbol: str) -> bool:
+    if universe == "Nifty 50":
+        return symbol.split(".")[0] in NIFTY_50_SYMBOLS
+    if universe == "F&O":
+        return symbol.split(".")[0] in FNO_STOCKS
+    if universe == "Indices":
+        norm_symbol = symbol.replace(".", " ").replace("_", " ")
+        return any(idx == norm_symbol or idx == symbol for idx in INDICES)
+    if universe == "All NSE":
+        return symbol not in INDICES and symbol.replace(".", " ") not in INDICES
+
+    start_name = symbol.split(".")[0].replace("_", " ")
+    return start_name not in INDICES and symbol not in INDICES
+
+
+event_universe_symbols = sorted(
+    [symbol for symbol in price_data.keys() if symbol_matches_event_universe(symbol)]
+)
+latest_screen_date = max(
+    (df["Date"].max() for symbol, df in price_data.items() if symbol in event_universe_symbols and not df.empty),
+    default=pd.Timestamp.today().normalize(),
+)
+latest_screen_date = pd.Timestamp(latest_screen_date).normalize()
+
+if st.session_state.scr_date is None:
+    st.session_state.scr_date = latest_screen_date.date().isoformat()
+
+st.subheader("🎯 Refine Screener")
+# Screener controls are rendered closer to the event table below.
+with st.form("screener_form_v2"):
+    c1, c2, c3, c4, c5 = st.columns(5)
+    with c1:
+        scr_date_input = st.date_input(
+            "Crossover Date",
+            value=pd.to_datetime(st.session_state.scr_date).date(),
+            max_value=latest_screen_date.date(),
+        )
+    with c2:
+        scr_signal_input = st.selectbox(
+            "Signal",
+            ["Both", "Bullish", "Bearish"],
+            index=["Both", "Bullish", "Bearish"].index(st.session_state.scr_signal),
+        )
+    with c3:
+        scr_ma_type_input = st.selectbox(
+            "MA Type",
+            ["Both", "SMA", "EMA"],
+            index=["Both", "SMA", "EMA"].index(st.session_state.scr_ma_type),
+        )
+    with c4:
+        scr_fast_ma_input = st.selectbox(
+            "Fast MA",
+            options=["Any", 5, 10, 12, 20, 50],
+            index=["Any", 5, 10, 12, 20, 50].index(st.session_state.scr_fast_ma),
+        )
+    with c5:
+        scr_slow_ma_input = st.selectbox(
+            "Slow MA",
+            options=["Any", 20, 26, 50, 100, 200],
+            index=["Any", 20, 26, 50, 100, 200].index(st.session_state.scr_slow_ma),
+        )
+
+    colA, colB, _ = st.columns([1, 1.2, 3])
+    with colA:
+        refine_btn = st.form_submit_button("Refine Screener")
+    with colB:
+        refresh_btn = st.form_submit_button("Reset Filters")
+
+if refine_btn:
+    if (
+        scr_fast_ma_input != "Any"
+        and scr_slow_ma_input != "Any"
+        and scr_fast_ma_input >= scr_slow_ma_input
+    ):
+        st.warning("Fast MA must be smaller than Slow MA to filter properly.")
+    else:
+        st.session_state.screener_active = True
+        st.session_state.scr_date = pd.to_datetime(scr_date_input).date().isoformat()
+        st.session_state.scr_signal = scr_signal_input
+        st.session_state.scr_ma_type = scr_ma_type_input
+        st.session_state.scr_fast_ma = scr_fast_ma_input
+        st.session_state.scr_slow_ma = scr_slow_ma_input
+        st.rerun()
+
+if refresh_btn:
+    st.session_state.screener_active = False
+    st.session_state.scr_date = latest_screen_date.date().isoformat()
+    st.session_state.scr_signal = "Both"
+    st.session_state.scr_ma_type = "Both"
+    st.session_state.scr_fast_ma = "Any"
+    st.session_state.scr_slow_ma = "Any"
+    st.rerun()
+
+active_scr_date = (
+    st.session_state.scr_date
+    if st.session_state.screener_active and st.session_state.scr_date
+    else latest_screen_date.date().isoformat()
+)
+active_scr_signal = st.session_state.scr_signal if st.session_state.screener_active else "Both"
+active_scr_ma_type = st.session_state.scr_ma_type if st.session_state.screener_active else "Both"
+active_scr_fast = (
+    None if not st.session_state.screener_active or st.session_state.scr_fast_ma == "Any"
+    else int(st.session_state.scr_fast_ma)
+)
+active_scr_slow = (
+    None if not st.session_state.screener_active or st.session_state.scr_slow_ma == "Any"
+    else int(st.session_state.scr_slow_ma)
+)
+
+report_by_symbol = {
+    raw_name.replace("_", "."): best
+    for raw_name, best in reports_cache.items()
+}
+
+with st.spinner("Calculating crossover events..."):
+    crossover_events = build_crossover_event_rows(
+        tuple(event_universe_symbols),
+        timeframe,
+        active_scr_date,
+        active_scr_ma_type,
+        active_scr_fast,
+        active_scr_slow,
+        active_scr_signal,
+        data_mtime,
+    )
+
+event_rows = []
+for cross_data in crossover_events:
+    symbol = cross_data["RawSymbol"]
+    best = report_by_symbol.get(symbol)
+
+    trades = None
+    if best is not None and not pd.isna(best.get("Trades", np.nan)):
+        trades = int(best["Trades"])
+        if trades < min_trades:
+            continue
+
+    win_rate = best.get("WinRate", np.nan) if best is not None else np.nan
+    if pd.notna(win_rate) and win_rate > 1:
+        win_rate /= 100
+    if pd.notna(win_rate) and trades is not None:
+        wins = int(round(win_rate * trades))
+        win_rate_str = f"{round(win_rate * 100, 1)}% ({wins}/{trades})"
+    else:
+        win_rate_str = "-"
+
+    base_symbol_clean = symbol.split(".")[0]
+    display_symbol = f"{symbol} *" if base_symbol_clean in FNO_STOCKS else symbol
+
+    event_rows.append({
+        "Symbol": display_symbol,
+        "Crossover Date": cross_data["Crossover Date"],
+        "Crossover Signal": cross_data["Crossover Signal"],
+        "Crossover MA Type": cross_data["Crossover MA Type"],
+        "Crossover MA Pair": cross_data["Crossover MA Pair"],
+        "Recent Bullish Crossover": cross_data["Recent Bullish Crossover"],
+        "Return (%)": round(best["Return"], 2) if best is not None else np.nan,
+        "Win Rate (%)": win_rate_str,
+        "Sharpe": round(best["Sharpe"], 2) if best is not None else np.nan,
+        "Sigma (Market)": best.get("MarketSigma", best.get("volatility", np.nan)) if best is not None else np.nan,
+    })
+
+summary_df = pd.DataFrame(event_rows)
+if not summary_df.empty:
+    summary_df = summary_df.sort_values(
+        by=["Recent Bullish Crossover", "Symbol", "Crossover MA Type", "Crossover MA Pair"],
+        ascending=[False, True, True, True],
+    )
+    summary_df = summary_df.drop(columns=["Recent Bullish Crossover"])
+    summary_df = summary_df.fillna(0).reset_index(drop=True)
+else:
+    summary_df = pd.DataFrame(
+        columns=[
+            "Symbol",
+            "Crossover Date",
+            "Crossover Signal",
+            "Crossover MA Type",
+            "Crossover MA Pair",
+            "Return (%)",
+            "Win Rate (%)",
+            "Sharpe",
+            "Sigma (Market)",
+        ]
+    )
+    st.info("No crossover events found for the selected screener filters.")
+
+table_title = "📊 Crossover Screener "
+if st.session_state.screener_active:
+    table_title += (
+        f"({active_scr_date} | {active_scr_signal} | "
+        f"{active_scr_ma_type if active_scr_ma_type != 'Both' else 'Any MA Type'} | "
+        f"{active_scr_fast if active_scr_fast is not None else 'Any'}/"
+        f"{active_scr_slow if active_scr_slow is not None else 'Any'})"
+    )
+else:
+    table_title += f"(All Crossovers On {active_scr_date})"
 
 st.subheader(table_title)
 
