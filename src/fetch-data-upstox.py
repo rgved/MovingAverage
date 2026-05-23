@@ -5,12 +5,14 @@ import pandas as pd
 from dotenv import load_dotenv
 from datetime import datetime, timedelta, date
 
-# Load API token
-load_dotenv()
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+BASE_DIR = os.path.dirname(BASE_DIR)  # project root
+env_path = os.path.join(BASE_DIR, ".env")
+load_dotenv(env_path)
 ACCESS_TOKEN = os.getenv("UPSTOX_ACCESS_TOKEN")
 
 if not ACCESS_TOKEN:
-    raise RuntimeError("UPSTOX_ACCESS_TOKEN missing in .env")
+    raise PermissionError("UPSTOX_ACCESS_TOKEN missing or empty in .env")
 
 HEADERS = {
     "Authorization": f"Bearer {ACCESS_TOKEN}",
@@ -18,7 +20,6 @@ HEADERS = {
 }
 
 # Paths
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DATA_DIR = os.path.join(BASE_DIR, "data", "raw")
 
 os.makedirs(DATA_DIR, exist_ok=True)
@@ -40,6 +41,8 @@ def _fetch_candles(instrument_key: str, from_date: date, to_date: date) -> list:
         f"{instrument_key}/day/{to_date}/{from_date}"
     )
     response = requests.get(url, headers=HEADERS)
+    if response.status_code == 401 or response.status_code == 403:
+        raise PermissionError(f"Authentication failed with status {response.status_code}: {response.text[:120]}")
     if response.status_code != 200:
         print(f"  API error {response.status_code}: {response.text[:120]}")
         return []
@@ -190,6 +193,7 @@ if __name__ == "__main__":
             fetch_history(sym, key)
         except Exception as e:
             print(f"  Error processing {sym}: {e}")
+            raise
             
     items = list(SYMBOL_MAP.items())
     
@@ -198,8 +202,15 @@ if __name__ == "__main__":
         # Submit all tasks
         futures = {executor.submit(process_symbol, item): item for item in items}
         
-        # Track completion
+        # Track completion and propagate errors
         for idx, future in enumerate(concurrent.futures.as_completed(futures), 1):
-            # We print progress, but individual print statements from fetch_history 
-            # might interleave slightly. This is fine for CLI feedback.
-            print(f"PROGRESS:{idx}/{total_symbols}", flush=True)
+            try:
+                future.result()
+            except PermissionError as pe:
+                # Critical auth error – abort all processing
+                print(f"Authentication error during processing: {pe}")
+                raise
+            except Exception as e:
+                print(f"Error processing {future}: {e}")
+            finally:
+                print(f"PROGRESS:{idx}/{total_symbols}", flush=True)

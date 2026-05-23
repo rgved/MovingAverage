@@ -72,49 +72,48 @@ def run_script(script_name, status_text, progress_bar, progress_text):
     status_text.text(f"Running {script_name}...")
     start_time = time.time()
     
-    try:
-        process = subprocess.Popen(
-            [sys.executable, script_path],
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            text=True,
-            bufsize=1 # Line buffered
-        )
-        
-        for line in iter(process.stdout.readline, ''):
-            if line.startswith("PROGRESS:"):
-                try:
-                    parts = line.strip().split("PROGRESS:")[1].split("/")
-                    curr = int(parts[0])
-                    total = int(parts[1])
-                    if total > 0:
-                        pct = curr / total
-                        progress_bar.progress(pct)
-                        
-                        elapsed = time.time() - start_time
-                        if curr > 0:
-                            total_estimated = elapsed / pct
-                            remaining = max(0, total_estimated - elapsed)
-                            mins, secs = divmod(int(remaining), 60)
-                            progress_text.text(f"Estimated time left: {mins}m {secs}s ({curr}/{total})")
-                except Exception:
-                    pass
-            # Optional: print(line.strip()) if debugging
-
-        process.wait()
-        if process.returncode != 0:
-            stderr_output = process.stderr.read()
-            st.error(f"Error running {script_name}:\n{stderr_output}")
-            raise subprocess.CalledProcessError(process.returncode, process.args)
-            
-    except Exception as e:
-        raise e
+    process = subprocess.Popen(
+        [sys.executable, script_path],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+        text=True,
+        bufsize=1 # Line buffered
+    )
+    
+    logs = st.session_state.get("pipeline_logs_list", [])
+    for line in iter(process.stdout.readline, ''):
+        logs.append(line.rstrip())
+        if line.startswith("PROGRESS:"):
+            try:
+                parts = line.strip().split("PROGRESS:")[1].split("/")
+                curr = int(parts[0])
+                total = int(parts[1])
+                if total > 0:
+                    pct = curr / total
+                    progress_bar.progress(pct)
+                    
+                    elapsed = time.time() - start_time
+                    if curr > 0:
+                        total_estimated = elapsed / pct
+                        remaining = max(0, total_estimated - elapsed)
+                        mins, secs = divmod(int(remaining), 60)
+                        progress_text.text(f"Estimated time left: {mins}m {secs}s ({curr}/{total})")
+            except Exception:
+                pass
+    
+    st.session_state.pipeline_logs_list = logs
+    st.session_state.pipeline_logs = "\n".join(logs[-100:])
+    process.wait()
+    if process.returncode != 0:
+        raise subprocess.CalledProcessError(process.returncode, process.args)
 
 if st.sidebar.button("Update Data & Run Optimization"):
     # Check if token exists
     if not current_token:
         st.sidebar.error("⚠ Access Token Missing! Please update the token above first.")
     else:
+        st.session_state.pipeline_logs_list = []
+        st.session_state.pipeline_logs = ""
         status_placeholder = st.sidebar.empty()
         # Initialize progress tracking elements inline
         progress_bar = st.sidebar.progress(0.0)
@@ -139,8 +138,15 @@ if st.sidebar.button("Update Data & Run Optimization"):
             status_placeholder.success("Pipeline completed successfully! ✅")
             st.rerun() # Refresh app to show new data
             
+        except subprocess.CalledProcessError as cpe:
+            st.sidebar.error(f"Pipeline failed with exit code {cpe.returncode}. Check Pipeline Logs below.")
         except Exception as e:
-            st.sidebar.error("Pipeline failed!")
+            st.sidebar.error(f"Pipeline failed: {e}")
+
+# Pipeline Logs expander
+with st.sidebar.expander("Pipeline Logs", expanded=False):
+    log_content = st.session_state.get("pipeline_logs", "No logs yet.")
+    st.code(log_content, language="text")
 
 st.sidebar.markdown("---")
 st.sidebar.header("Filters & Sorting")
