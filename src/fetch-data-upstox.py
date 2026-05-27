@@ -97,15 +97,6 @@ def fetch_history(symbol: str, instrument_key: str):
     today = datetime.today().date()
     to_date = today + timedelta(days=1)   # Upstox to_date is exclusive
     
-    out_path = os.path.join(DATA_DIR, f"{symbol}.csv")
-
-    # Fast-path: If the file was modified/checked today, skip entirely!
-    if os.path.exists(out_path):
-        mtime = datetime.fromtimestamp(os.path.getmtime(out_path)).date()
-        if mtime == today:
-            print(f"[UP-TO-DATE] {symbol}: checked today, skipping.")
-            return
-
     existing_df = _load_existing(symbol)
 
     # ── Decide fetch mode ────────────────────────────────────────────────────
@@ -147,9 +138,6 @@ def fetch_history(symbol: str, instrument_key: str):
 
     if not candles:
         print(f"  ! No new candles returned for {symbol}.")
-        # Touch the file to update its modified time so we know we checked it today
-        if os.path.exists(out_path):
-            os.utime(out_path, None)
         return
 
     new_df = _candles_to_df(candles)
