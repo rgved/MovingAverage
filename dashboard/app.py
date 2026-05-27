@@ -61,6 +61,7 @@ if new_token:
     set_key(env_path, "UPSTOX_ACCESS_TOKEN", new_token)
     # Reload environment variable to ensure consistency
     os.environ["UPSTOX_ACCESS_TOKEN"] = new_token
+    current_token = new_token
     st.sidebar.success("Token updated!")
 
 st.sidebar.markdown("---")
@@ -554,23 +555,35 @@ def build_download_csv(tf, ma_type_filter, crossover_filter, fast_mas, slow_mas,
             if f < s:
                 # Add Bullish or Bearish or both based on the filter
                 if crossover_filter in ["Both", "Bullish"]:
-                    ma_pairs[f"Bullish_{f}/{s}"] = (f, s, "Bullish")
+                    if ma_type_filter in ["Both", "EMA"]:
+                        ma_pairs[f"Bullish_EMA_{f}_{s}"] = (f, s, "EMA", "Bullish")
+                    if ma_type_filter in ["Both", "SMA"]:
+                        ma_pairs[f"Bullish_SMA_{f}_{s}"] = (f, s, "SMA", "Bullish")
                 if crossover_filter in ["Both", "Bearish"]:
-                    ma_pairs[f"Bearish_{f}/{s}"] = (f, s, "Bearish")
+                    if ma_type_filter in ["Both", "EMA"]:
+                        ma_pairs[f"Bearish_EMA_{f}_{s}"] = (f, s, "EMA", "Bearish")
+                    if ma_type_filter in ["Both", "SMA"]:
+                        ma_pairs[f"Bearish_SMA_{f}_{s}"] = (f, s, "SMA", "Bearish")
 
     counts_by_date = {}
     names_by_date = {}  
 
-    for file in os.listdir(full_data_dir):
+    files = [f for f in os.listdir(full_data_dir) if f.endswith(".parquet") or f.endswith(".csv")]
+
+    for file in files:
+        # Skip indices here — they are handled separately for NIFTY*
+        start_name = file.split(".")[0]
+        if start_name in INDICES or file.replace(".parquet", "") in INDICES or file.replace(".csv", "") in INDICES:
+            continue
+
         is_parquet = file.endswith(".parquet")
         is_csv = file.endswith(".csv")
         if not (is_parquet or is_csv):
             continue
-        symbol = file.rsplit(".", 1)[0]
 
+        symbol = file.rsplit(".", 1)[0]
+        display_name = f"{symbol} *" if symbol.split(".")[0] in FNO_STOCKS else symbol
         price_file = os.path.join(full_data_dir, file)
-        if not os.path.exists(price_file):
-            continue
 
         try:
             if is_parquet:
@@ -580,121 +593,90 @@ def build_download_csv(tf, ma_type_filter, crossover_filter, fast_mas, slow_mas,
 
             df["Date"] = pd.to_datetime(df["Date"], utc=True, errors="coerce").dt.tz_convert(None)
             df = df.sort_values("Date")
-
             if tf == "Weekly":
                 df = (
                     df.set_index("Date")
                     .resample("W")
-                    .agg({
-                        "Open": "first",
-                        "High": "max",
-                        "Low": "min",
-                        "Close": "last",
-                        "Volume": "sum"
-                    })
+                    .agg({"Open": "first", "High": "max", "Low": "min", "Close": "last", "Volume": "sum"})
                     .dropna()
                     .reset_index()
                 )
-                
-            # Precompute required MAs for this stock based on permutations
-            ma_calcs = {}
-            for f, s, _ in ma_pairs.values():
-                if f not in ma_calcs:
-                    if ma_type_filter in ["Both", "EMA"]:
-                        ma_calcs[f"EMA_{f}"] = df["Close"].ewm(span=f, adjust=False).mean()
-                    if ma_type_filter in ["Both", "SMA"]:
-                        ma_calcs[f"SMA_{f}"] = df["Close"].rolling(f).mean()
-                        
-                if s not in ma_calcs:
-                    if ma_type_filter in ["Both", "EMA"]:
-                        ma_calcs[f"EMA_{s}"] = df["Close"].ewm(span=s, adjust=False).mean()
-                    if ma_type_filter in ["Both", "SMA"]:
-                        ma_calcs[f"SMA_{s}"] = df["Close"].rolling(s).mean()
 
-            # Clean symbol name for display (remove .NS suffix)
-            display_name = symbol.split(".")[0] if "." in symbol else symbol
+            for col_name, (fast, slow, ma_type, direction) in ma_pairs.items():
+                temp_df = df.copy()
 
-            for col_name, (fast, slow, cross) in ma_pairs.items():
-                
-                # If Both MA Types are selected, we evaluate EMA and SMA and count if ANY matches true 
-                # (or just follow the dominant strategy, but here we process each individually)
-                types_to_check = ["EMA", "SMA"] if ma_type_filter == "Both" else [ma_type_filter]
-                
+                if ma_type == "EMA":
+                    temp_df["MA_Fast"] = temp_df["Close"].ewm(span=fast, adjust=False).mean()
+                    temp_df["MA_Slow"] = temp_df["Close"].ewm(span=slow, adjust=False).mean()
+                else:
+                    temp_df["MA_Fast"] = temp_df["Close"].rolling(fast).mean()
+                    temp_df["MA_Slow"] = temp_df["Close"].rolling(slow).mean()
+
+                temp_df["Signal"] = np.where(temp_df["MA_Fast"] > temp_df["MA_Slow"], 1, -1)
+                temp_df["Crossover"] = temp_df["Signal"].diff()
+
+                if direction == "Bullish":
+                    signal_triggered = temp_df["Crossover"] == 2
+                else:
+                    signal_triggered = temp_df["Crossover"] == -2
+
                 # Track which dates this stock already contributed to for this col_name,
-                # so we don't double-count when checking both EMA and SMA.
+                # so we only count each stock once per date per crossover bucket.
                 counted_dates = set()
-                
-                for m_type in types_to_check:
-                    fast_series = ma_calcs[f"{m_type}_{fast}"]
-                    slow_series = ma_calcs[f"{m_type}_{slow}"]
-                    
-                    # Compute signal and crossover diff
-                    # 1 = Bullish state, -1 = Bearish state
-                    raw_signal = np.where(fast_series > slow_series, 1, -1)
-                    # Diff: 2 = Bullish Crossover, -2 = Bearish Crossover
-                    crossover_diff = pd.Series(raw_signal).diff().fillna(0)
-                    
-                    if cross == "Bullish":
-                        signal_triggered = crossover_diff == 2
-                    else:
-                        signal_triggered = crossover_diff == -2
-                        
-                    for dt, is_triggered in zip(df["Date"], signal_triggered):
-                        if pd.isna(dt):
-                            continue
-                            
-                        day_key = dt.date()
-                        if day_key not in counts_by_date:
-                            counts_by_date[day_key] = {k: 0 for k in ma_pairs}
-                            names_by_date[day_key] = {k: [] for k in ma_pairs}
-                            
-                        if bool(is_triggered) and day_key not in counted_dates:
-                            counts_by_date[day_key][col_name] += 1
-                            names_by_date[day_key][col_name].append(display_name)
-                            # Track this date so we don't double-count if checking
-                            # both EMA and SMA for the same stock.
-                            counted_dates.add(day_key)
 
+                for dt, is_triggered in zip(temp_df["Date"], signal_triggered):
+                    if pd.isna(dt):
+                        continue
+
+                    day_key = dt.date()
+                    if day_key not in counts_by_date:
+                        counts_by_date[day_key] = {k: 0 for k in ma_pairs}
+                        names_by_date[day_key] = {k: [] for k in ma_pairs}
+
+                    if bool(is_triggered) and day_key not in counted_dates:
+                        counts_by_date[day_key][col_name] += 1
+                        names_by_date[day_key][col_name].append(display_name)
+                        # Track this date so we don't double-count if checking
+                        # multiple rows for the same signal/day.
+                        counted_dates.add(day_key)
         except Exception:
             continue
 
-    # ---------- BUILD DATAFRAME ----------
-
-    download_df = pd.DataFrame([
+    download_rows = [
         {"Date": pd.to_datetime(day), **vals}
         for day, vals in counts_by_date.items()
-    ])
+    ]
 
+    download_df = pd.DataFrame(download_rows)
     if download_df.empty:
         return pd.DataFrame(columns=["Date", *ma_pairs.keys(), "NIFTY*"])
 
     download_df = download_df.sort_values("Date").reset_index(drop=True)
 
-    # Build stock names columns (comma-separated)
+    # Build a parallel notes/name map so the CSV consumer can inspect which names fired.
     names_rows = []
     for day in download_df["Date"]:
         day_key = day.date()
         if day_key in names_by_date:
             names_rows.append({
-                f"Stocks_{k}": ",".join(v) if v else ""
-                for k, v in names_by_date[day_key].items()
+                "Date": day,
+                **{
+                    f"{k}_Names": ", ".join(v)
+                    for k, v in names_by_date[day_key].items()
+                }
             })
-        else:
-            names_rows.append({f"Stocks_{k}": "" for k in ma_pairs})
-    
-    names_df = pd.DataFrame(names_rows)
-    download_df = pd.concat([download_df, names_df], axis=1)
+
+    names_df = pd.DataFrame(names_rows) if names_rows else pd.DataFrame(columns=["Date"])
 
     # Normalize download_df dates to midnight for consistent merging
     download_df["Date"] = download_df["Date"].dt.normalize()
 
-    # ---------- ADD NIFTY CLOSE ----------
-
-    nifty_found = False
+    # ---------- NIFTY* COLUMN ----------
+    # First try local processed/index files; if not found, fallback to yfinance for ^NSEI.
+    nifty_df = None
     nifty_candidates = ["Nifty 50", "NIFTY 50", "NIFTY"]
 
     for nifty_symbol in nifty_candidates:
-
         nifty_file_pq = os.path.join(full_data_dir, f"{nifty_symbol}.parquet")
         nifty_file_csv = os.path.join(full_data_dir, f"{nifty_symbol}.csv")
 
@@ -703,46 +685,42 @@ def build_download_csv(tf, ma_type_filter, crossover_filter, fast_mas, slow_mas,
                 nifty_df = pd.read_parquet(nifty_file_pq, engine="pyarrow")
             elif os.path.exists(nifty_file_csv):
                 nifty_df = pd.read_csv(nifty_file_csv)
-            else:
-                continue
 
-            nifty_df["Date"] = pd.to_datetime(
-                nifty_df["Date"], utc=True, errors="coerce"
-            ).dt.tz_convert(None)
+            if nifty_df is not None and not nifty_df.empty:
+                nifty_df["Date"] = pd.to_datetime(
+                    nifty_df["Date"], utc=True, errors="coerce"
+                ).dt.tz_convert(None)
 
-            nifty_df = nifty_df[["Date", "Close"]].dropna()
-            nifty_df.rename(columns={"Close": "NIFTY*"}, inplace=True)
-            # Normalize to midnight for consistent merging
-            nifty_df["Date"] = nifty_df["Date"].dt.normalize()
+                nifty_df = nifty_df[["Date", "Close"]].dropna()
+                nifty_df = nifty_df.rename(columns={"Close": "NIFTY*"})
 
-            if tf == "Weekly":
-                nifty_df = (
-                    nifty_df.set_index("Date")
-                    .resample("W")
-                    .last()
-                    .dropna()
-                    .reset_index()
-                )
+                # Normalize to midnight (strip time component) to match download_df dates
+                nifty_df["Date"] = nifty_df["Date"].dt.normalize()
 
-            download_df = download_df.merge(nifty_df, on="Date", how="left")
-            # Forward-fill missing NIFTY values (handles trading holidays)
-            download_df["NIFTY*"] = download_df["NIFTY*"].ffill()
-            nifty_found = True
-            break
+                if tf == "Weekly":
+                    nifty_df = (
+                        nifty_df.set_index("Date")
+                        .resample("W")
+                        .last()
+                        .dropna()
+                        .reset_index()
+                    )
+                    nifty_df["Date"] = nifty_df["Date"].dt.normalize()
 
+                download_df = download_df.merge(nifty_df, on="Date", how="left")
+                break
         except Exception:
+            nifty_df = None
             continue
 
-    if not nifty_found:
-        # Fallback: fetch Nifty 50 from Yahoo Finance when local file is missing
+    # Fallback: fetch NIFTY from yfinance if local index file missing
+    if "NIFTY*" not in download_df.columns or download_df["NIFTY*"].isna().all():
         try:
             import yfinance as yf
-            nifty_yf = yf.download("^NSEI", period="1y", progress=False)
-            # Flatten MultiIndex columns (newer yfinance returns ('Close', '^NSEI'))
-            if isinstance(nifty_yf.columns, pd.MultiIndex):
-                nifty_yf.columns = nifty_yf.columns.get_level_values(0)
-            if not nifty_yf.empty and "Close" in nifty_yf.columns:
-                nifty_yf = nifty_yf[["Close"]].reset_index()
+            max_days = int(days_limit) + 40  # pad to handle weekends/holidays
+            nifty_yf = yf.download("^NSEI", period=f"{max_days}d", interval="1d", auto_adjust=False, progress=False)
+            if not nifty_yf.empty:
+                nifty_yf = nifty_yf.reset_index()[["Date", "Close"]]
                 nifty_yf.columns = ["Date", "NIFTY*"]
                 nifty_yf["Date"] = pd.to_datetime(nifty_yf["Date"])
                 if nifty_yf["Date"].dt.tz is not None:
@@ -758,34 +736,31 @@ def build_download_csv(tf, ma_type_filter, crossover_filter, fast_mas, slow_mas,
                         .dropna()
                         .reset_index()
                     )
+                    nifty_yf["Date"] = nifty_yf["Date"].dt.normalize()
 
                 download_df = download_df.merge(nifty_yf, on="Date", how="left")
-                # Forward-fill missing NIFTY values (handles trading holidays)
-                download_df["NIFTY*"] = download_df["NIFTY*"].ffill()
-                nifty_found = True
         except Exception:
+            # Leave NIFTY* missing if even fallback fails
             pass
 
-        if not nifty_found:
-            download_df["NIFTY*"] = np.nan
+    if not names_df.empty:
+        download_df = download_df.merge(names_df, on="Date", how="left")
 
-    # Build ordered columns: count columns interleaved with their stock name columns
     ordered_cols = ["Date"]
-    for k in ma_pairs.keys():
-        ordered_cols.append(k)
-        ordered_cols.append(f"Stocks_{k}")
-    ordered_cols.append("NIFTY*")
-    
-    # Filter based on user-defined number of days
+    ordered_cols.extend(ma_pairs.keys())
+    if "NIFTY*" in download_df.columns:
+        ordered_cols.append("NIFTY*")
+    ordered_cols.extend([c for c in download_df.columns if c.endswith("_Names")])
+    download_df = download_df[[c for c in ordered_cols if c in download_df.columns]]
+
+    # Filter to the requested recent window by actual rows present
     # (Getting the max date and slicing the past `days_limit`)
     max_date = download_df["Date"].max()
     cutoff_date = max_date - pd.Timedelta(days=days_limit)
     download_df = download_df[download_df["Date"] >= cutoff_date]
 
-    return download_df[ordered_cols].reset_index(drop=True)
+    return download_df.reset_index(drop=True)
 
-
-# ---------- CUSTOM SCRENER CONTROLS ----------
 if "screener_active" not in st.session_state:
     st.session_state.screener_active = False
 if "scr_ma_type" not in st.session_state:
@@ -799,41 +774,38 @@ if "scr_signal" not in st.session_state:
 if "scr_date" not in st.session_state:
     st.session_state.scr_date = None
 
-# Screener controls are rendered closer to the event table below.
-# ================================================================
-# PASS 1 — UNIVERSE PREPARATION
+
 # Load cached datasets, apply universe filter, collect all eligible
-# stocks. No screener / min_trades filtering yet.
-# ================================================================
-import time as _time
-_t0 = _time.perf_counter()
+# report files, and build the final DataFrame.
+# This avoids repeated disk scans and recomputation on every small UI change.
+
+_processed_dir = os.path.join(BASE_DIR, "data", "processed")
 
 # Compute directory mtimes — used as cache keys for auto-invalidation
-_processed_dir = os.path.join(BASE_DIR, "data", "processed")
 data_mtime    = get_dir_mtime(_processed_dir, ".parquet") or get_dir_mtime(_processed_dir, ".csv")
 reports_mtime = get_dir_mtime(reports_dir, ".csv")
 
 # Load report + price caches (disk only on first call or after data update)
 reports_cache = load_all_reports(years, reports_mtime)
-_t_reports = _time.perf_counter()
-
 price_data = load_all_price_data(timeframe, data_mtime)
-_t_prices = _time.perf_counter()
 
+# collect available report files once for current lookback
+report_files = set()
 target_suffix        = f"_{years}y_dynamic_trend_noise_optimization.csv"
-all_universe_rows    = []   # {raw_name, symbol, best} for every universe-eligible stock
-all_universe_symbols = []   # symbol strings for the crossover batch
-
+non_yearly_suffix    = f"_dynamic_trend_noise_optimization.csv"
 for file in os.listdir(reports_dir):
-    if not file.endswith(target_suffix):
-        continue
+    if file.endswith(target_suffix):
+        report_files.add(file)
+    # Fallback if only old non-year-specific report exists
+    elif file.endswith(non_yearly_suffix) and target_suffix.replace(f"_{years}y", "") == non_yearly_suffix:
+        report_files.add(file)
 
-    raw_name = file.replace(target_suffix, "")
-    if "Nifty" in raw_name:   # heuristic: index names may have underscore-for-space
-        pass
-    symbol = raw_name.replace("_", ".")   # e.g. RELIANCE_NS → RELIANCE.NS
+# build crossover metadata only for symbols that *might* appear in the table
+# based on current report files and universe selection
+candidate_symbols = []
+for raw_name in reports_cache.keys():
+    symbol = raw_name.replace("_", ".")
 
-    # ── Universe filter ─────────────────────────────────────────────
     if universe == "Nifty 50":
         if symbol.split(".")[0] not in NIFTY_50_SYMBOLS:
             continue
@@ -842,139 +814,108 @@ for file in os.listdir(reports_dir):
             continue
     elif universe == "Indices":
         norm_symbol = symbol.replace(".", " ").replace("_", " ")
-        is_index, real_index_name = False, ""
-        for idx in INDICES:
-            if idx == norm_symbol or idx == symbol:
-                is_index, real_index_name = True, idx
-                break
-        if not is_index:
+        if not any(idx == norm_symbol or idx == symbol for idx in INDICES):
             continue
-        symbol = real_index_name
     elif universe == "All NSE":
         if symbol in INDICES or symbol.replace(".", " ") in INDICES:
             continue
-    else:   # NSE 500 (default)
+    else:  # NSE 500
+        # exclude known index names
         start_name = symbol.split(".")[0].replace("_", " ")
         if start_name in INDICES or symbol in INDICES:
             continue
-    # ─────────────────────────────────────────────────────────────────
 
-    best = reports_cache.get(raw_name)
-    if best is None:
-        continue
+    candidate_symbols.append(symbol)
 
-    all_universe_rows.append({"raw_name": raw_name, "symbol": symbol, "best": best})
-    all_universe_symbols.append(symbol)
-
-# Compute crossovers for the FULL universe.
-# - Default mode: scan ALL MA pairs, show most recent crossover from any pair.
-# - Screener mode: filter to the user-selected pair only.
-with st.spinner("Calculating crossovers..."):
-    if st.session_state.screener_active:
-        crossover_map_all = calculate_crossovers_with_pair(
-            tuple(all_universe_symbols),
-            timeframe,
-            st.session_state.scr_fast_ma,
-            st.session_state.scr_slow_ma,
-            st.session_state.scr_ma_type,
-            data_mtime,
-        )
-    else:
-        crossover_map_all = calculate_crossovers(
-            tuple(all_universe_symbols),
+# compute crossover info once, using the cached price_data
+if st.session_state.screener_active:
+    if st.session_state.scr_fast_ma == "Any" or st.session_state.scr_slow_ma == "Any":
+        crossover_data = calculate_crossovers(
+            tuple(candidate_symbols),
             timeframe,
             years,
             data_mtime,
             reports_mtime,
         )
-_t_cross = _time.perf_counter()
+    else:
+        crossover_data = calculate_crossovers_with_pair(
+            tuple(candidate_symbols),
+            timeframe,
+            int(st.session_state.scr_fast_ma),
+            int(st.session_state.scr_slow_ma),
+            st.session_state.scr_ma_type,
+            data_mtime,
+        )
+else:
+    crossover_data = calculate_crossovers(
+        tuple(candidate_symbols),
+        timeframe,
+        years,
+        data_mtime,
+        reports_mtime,
+    )
 
-# ⏱ Sidebar profiling — shows timing for last run
-st.sidebar.markdown("---")
-st.sidebar.caption(
-    f"⏱ Reports: {_t_reports - _t0:.2f}s | "
-    f"Prices: {_t_prices - _t_reports:.2f}s | "
-    f"Crossovers: {_t_cross - _t_prices:.2f}s"
-)
+# ---------- BUILD SUMMARY TABLE ----------
+rows = []
+for raw_name in candidate_symbols:
+    # raw_name is already in symbol form, convert back to lookup format for reports_cache
+    best = reports_cache.get(raw_name.replace(".", "_"))
+    if best is None:
+        continue
 
-# ================================================================
-# PASS 2 — SCREENER EVALUATION
-# Apply min_trades filter. In screener mode, ALL universe stocks are
-# included (crossovers already computed on the selected pair above).
-# ================================================================
-rows               = []
-symbols_to_process = []
-
-for item in all_universe_rows:
-    symbol   = item["symbol"]
-    best     = item["best"]
-
-    # In screener mode we no longer drop stocks whose Best MA != selected pair.
-    # Crossovers were already computed using the selected pair for every stock.
-
-    # ── Min Trades filter ──────────────────────────────────────────
-    trades = int(best["Trades"])
+    # Min Trades filter
+    trades = int(best.get("Trades", 0)) if not pd.isna(best.get("Trades", np.nan)) else 0
     if trades < min_trades:
         continue
 
-    symbols_to_process.append(symbol)
+    cross_data = crossover_data.get(raw_name)
 
-    win_rate = best["WinRate"]
-    if win_rate > 1:
+    # Clean symbol label, add * if F&O
+    base_symbol_clean = raw_name.split(".")[0]
+    display_symbol = f"{raw_name} *" if base_symbol_clean in FNO_STOCKS else raw_name
+
+    win_rate = best.get("WinRate", np.nan)
+    if pd.notna(win_rate) and win_rate > 1:
         win_rate /= 100
-    wins = int(round(win_rate * trades))
-    win_rate_str = f"{round(win_rate * 100, 1)}% ({wins}/{trades})"
+    if pd.notna(win_rate):
+        wins = int(round(win_rate * trades))
+        win_rate_str = f"{round(win_rate * 100, 1)}% ({wins}/{trades})"
+    else:
+        win_rate_str = "-"
 
-    base_symbol_clean = symbol.split(".")[0]
-    display_symbol = f"{symbol} *" if base_symbol_clean in FNO_STOCKS else symbol
-
-    rows.append({
-        "Symbol":            display_symbol,
-        "RawSymbol":         symbol,
-        "Return (%)":        round(best["Return"], 2),
+    row = {
+        "Symbol": display_symbol,
+        "Return (%)": round(best["Return"], 2),
         "Win Rate (%)": win_rate_str,
-        "RawWinRate":        win_rate,
-        "Sharpe":            round(best["Sharpe"], 2),
-        "Sigma (Market)":   best.get("MarketSigma", best.get("volatility", 0)),
-        "Strategy Vol":      round(best.get("StrategyAggr", best.get("Volatility", 0)), 2),
-        "Trades":            trades,
-    })
+        "Sharpe": round(best["Sharpe"], 2),
+        "Sigma (Market)": best.get("MarketSigma", best.get("volatility", np.nan)),
+        "RawSymbol": raw_name,
+        "RawWinRate": win_rate if pd.notna(win_rate) else -1,
+    }
 
-# Subset crossovers — O(1) dict lookup, zero recomputation
-crossover_map = {
-    s: crossover_map_all[s]
-    for s in symbols_to_process
-    if s in crossover_map_all
-}
-
-# Add crossover data to rows (includes MA type/pair from the crossover itself)
-for row in rows:
-    sym = row["RawSymbol"]
-    if sym in crossover_map:
-        cross_data = crossover_map[sym]
+    if cross_data is not None:
         cross_date = cross_data["Recent Bullish Crossover"]
         if cross_date.year < 1900:
              row["Crossover Date"] = "-"
-             row["Crossover Signal"] = "-"
         else:
              row["Crossover Date"] = str(cross_date.date())
-             row["Crossover Signal"] = cross_data.get("Crossover Type", "-")
-        row["Crossover MA Type"] = cross_data.get("Crossover MA Type", "-")
-        row["Crossover MA Pair"] = cross_data.get("Crossover MA Pair", "-")
+        row["Crossover Type"] = cross_data["Crossover Type"]
+        row["Crossover MA Type"] = cross_data["Crossover MA Type"]
+        row["Crossover MA Pair"] = cross_data["Crossover MA Pair"]
         row["Recent Bullish Crossover"] = cross_date
-        
         # Update Trades count to reflect only last 3 months
-        if "Recent 3M Trades" in cross_data:
-            row["Trades"] = cross_data["Recent 3M Trades"]
+        row["Recent 3M Trades"] = cross_data["Recent 3M Trades"]
     else:
         row["Crossover Date"] = "-"
-        row["Crossover Signal"] = "-"
+        row["Crossover Type"] = "-"
         row["Crossover MA Type"] = "-"
         row["Crossover MA Pair"] = "-"
         row["Recent Bullish Crossover"] = pd.Timestamp.min
+        row["Recent 3M Trades"] = 0
+
+    rows.append(row)
 
 summary_df = pd.DataFrame(rows)
-
 if not summary_df.empty:
     # Always sort by Recent Bullish Crossover
     summary_df = summary_df.sort_values(by="Recent Bullish Crossover", ascending=False)
