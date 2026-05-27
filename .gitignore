@@ -2,8 +2,6 @@ reports/*
 !reports/*.csv
 data/raw/*
 !data/raw/*.parquet
-data/processed/*
-!data/processed/*.parquet
 data/trimmed/
 __pycache__/
 *.pyc
