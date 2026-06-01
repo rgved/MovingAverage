@@ -435,7 +435,8 @@ def calculate_crossovers_with_pair(
 def build_crossover_event_rows(
     stock_list: tuple,
     tf: str,
-    target_date_iso: str,
+    start_date_iso: str,
+    end_date_iso: str,
     ma_type: str,
     fast_filter,
     slow_filter,
@@ -443,16 +444,17 @@ def build_crossover_event_rows(
     data_mtime: float,
 ) -> list:
     """
-    Build event-level crossover rows for a specific screening date.
+    Build event-level crossover rows for a specific screening date range.
 
     Unlike the stock-summary helpers above, this returns every crossover event
-    that matches the selected date and filters, so the screener can start from
+    that matches the selected date range and filters, so the screener can start from
     the complete event set and only then refine it.
     """
     from concurrent.futures import ThreadPoolExecutor, as_completed
 
     price_data = load_all_price_data(tf, data_mtime)
-    target_date = pd.to_datetime(target_date_iso).date()
+    start_date = pd.to_datetime(start_date_iso).date()
+    end_date = pd.to_datetime(end_date_iso).date()
 
     if fast_filter is not None and slow_filter is not None:
         ma_pairs = [(fast_filter, slow_filter)] if fast_filter < slow_filter else []
@@ -502,7 +504,10 @@ def build_crossover_event_rows(
 
                     for _, cross_row in crossovers.iterrows():
                         cross_date = cross_row["Date"]
-                        if pd.isna(cross_date) or cross_date.date() != target_date:
+                        if pd.isna(cross_date):
+                            continue
+                        cross_day = cross_date.date()
+                        if cross_day < start_date or cross_day > end_date:
                             continue
 
                         crossover_type = "Bullish" if cross_row["Crossover"] == 2 else "Bearish"
@@ -534,7 +539,7 @@ def build_crossover_event_rows(
                 pass
 
     print(
-        f"[CROSSOVER EVENTS {target_date_iso} {ma_type} "
+        f"[CROSSOVER EVENTS {start_date_iso} -> {end_date_iso} {ma_type} "
         f"{fast_filter or 'ANY'}/{slow_filter or 'ANY'} {signal_filter}] "
         f"Done: {len(event_rows)} events."
     )
@@ -771,8 +776,10 @@ if "scr_slow_ma" not in st.session_state:
     st.session_state.scr_slow_ma = "Any"
 if "scr_signal" not in st.session_state:
     st.session_state.scr_signal = "Both"
-if "scr_date" not in st.session_state:
-    st.session_state.scr_date = None
+if "scr_start_date" not in st.session_state:
+    st.session_state.scr_start_date = None
+if "scr_end_date" not in st.session_state:
+    st.session_state.scr_end_date = None
 
 
 # Load cached datasets, apply universe filter, collect all eligible
@@ -960,17 +967,22 @@ latest_screen_date = max(
 )
 latest_screen_date = pd.Timestamp(latest_screen_date).normalize()
 
-if st.session_state.scr_date is None:
-    st.session_state.scr_date = latest_screen_date.date().isoformat()
+if st.session_state.scr_start_date is None:
+    st.session_state.scr_start_date = latest_screen_date.date().isoformat()
+if st.session_state.scr_end_date is None:
+    st.session_state.scr_end_date = latest_screen_date.date().isoformat()
 
 st.subheader("🎯 Refine Screener")
 # Screener controls are rendered closer to the event table below.
 with st.form("screener_form_v2"):
     c1, c2, c3, c4, c5 = st.columns(5)
     with c1:
-        scr_date_input = st.date_input(
-            "Crossover Date",
-            value=pd.to_datetime(st.session_state.scr_date).date(),
+        scr_date_range_input = st.date_input(
+            "Crossover Date Range",
+            value=(
+                pd.to_datetime(st.session_state.scr_start_date).date(),
+                pd.to_datetime(st.session_state.scr_end_date).date(),
+            ),
             max_value=latest_screen_date.date(),
         )
     with c2:
@@ -1006,32 +1018,51 @@ with st.form("screener_form_v2"):
 
 if refine_btn:
     if (
-        scr_fast_ma_input != "Any"
-        and scr_slow_ma_input != "Any"
-        and scr_fast_ma_input >= scr_slow_ma_input
+        not isinstance(scr_date_range_input, tuple)
+        or len(scr_date_range_input) != 2
+        or scr_date_range_input[0] is None
+        or scr_date_range_input[1] is None
     ):
-        st.warning("Fast MA must be smaller than Slow MA to filter properly.")
+        st.warning("Select a start and end date for the screener range.")
     else:
-        st.session_state.screener_active = True
-        st.session_state.scr_date = pd.to_datetime(scr_date_input).date().isoformat()
-        st.session_state.scr_signal = scr_signal_input
-        st.session_state.scr_ma_type = scr_ma_type_input
-        st.session_state.scr_fast_ma = scr_fast_ma_input
-        st.session_state.scr_slow_ma = scr_slow_ma_input
-        st.rerun()
+        scr_start_date_input, scr_end_date_input = scr_date_range_input
+        selected_days = (scr_end_date_input - scr_start_date_input).days + 1
+        if selected_days < 1 or selected_days > 5:
+            st.warning("Date range must be between 1 and 5 days.")
+        elif (
+            scr_fast_ma_input != "Any"
+            and scr_slow_ma_input != "Any"
+            and scr_fast_ma_input >= scr_slow_ma_input
+        ):
+            st.warning("Fast MA must be smaller than Slow MA to filter properly.")
+        else:
+            st.session_state.screener_active = True
+            st.session_state.scr_start_date = pd.to_datetime(scr_start_date_input).date().isoformat()
+            st.session_state.scr_end_date = pd.to_datetime(scr_end_date_input).date().isoformat()
+            st.session_state.scr_signal = scr_signal_input
+            st.session_state.scr_ma_type = scr_ma_type_input
+            st.session_state.scr_fast_ma = scr_fast_ma_input
+            st.session_state.scr_slow_ma = scr_slow_ma_input
+            st.rerun()
 
 if refresh_btn:
     st.session_state.screener_active = False
-    st.session_state.scr_date = latest_screen_date.date().isoformat()
+    st.session_state.scr_start_date = latest_screen_date.date().isoformat()
+    st.session_state.scr_end_date = latest_screen_date.date().isoformat()
     st.session_state.scr_signal = "Both"
     st.session_state.scr_ma_type = "Both"
     st.session_state.scr_fast_ma = "Any"
     st.session_state.scr_slow_ma = "Any"
     st.rerun()
 
-active_scr_date = (
-    st.session_state.scr_date
-    if st.session_state.screener_active and st.session_state.scr_date
+active_scr_start_date = (
+    st.session_state.scr_start_date
+    if st.session_state.screener_active and st.session_state.scr_start_date
+    else latest_screen_date.date().isoformat()
+)
+active_scr_end_date = (
+    st.session_state.scr_end_date
+    if st.session_state.screener_active and st.session_state.scr_end_date
     else latest_screen_date.date().isoformat()
 )
 active_scr_signal = st.session_state.scr_signal if st.session_state.screener_active else "Both"
@@ -1054,7 +1085,8 @@ with st.spinner("Calculating crossover events..."):
     crossover_events = build_crossover_event_rows(
         tuple(event_universe_symbols),
         timeframe,
-        active_scr_date,
+        active_scr_start_date,
+        active_scr_end_date,
         active_scr_ma_type,
         active_scr_fast,
         active_scr_slow,
@@ -1125,13 +1157,13 @@ else:
 table_title = "📊 Crossover Screener "
 if st.session_state.screener_active:
     table_title += (
-        f"({active_scr_date} | {active_scr_signal} | "
+        f"({active_scr_start_date} to {active_scr_end_date} | {active_scr_signal} | "
         f"{active_scr_ma_type if active_scr_ma_type != 'Both' else 'Any MA Type'} | "
         f"{active_scr_fast if active_scr_fast is not None else 'Any'}/"
         f"{active_scr_slow if active_scr_slow is not None else 'Any'})"
     )
 else:
-    table_title += f"(All Crossovers On {active_scr_date})"
+    table_title += f"(All Crossovers On {active_scr_start_date})"
 
 st.subheader(table_title)
 
