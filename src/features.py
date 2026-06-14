@@ -25,7 +25,7 @@ def compute_sma(df, column="Close", window=20):
     return df[column].rolling(window=window).mean()
 
 def compute_ema(df, column="Close", span=20):
-    return df[column].ewm(span=span, adjust=False).mean()
+    return df[column].ewm(span=span, min_periods=span, adjust=False).mean()
 
 def compute_wma(df, column="Close", window=20):
     weights = np.arange(1, window + 1)
@@ -54,10 +54,19 @@ def add_moving_averages(df, ma_type="SMA", fast=10, slow=20):
 # ---------- Signal Detection ----------
 def generate_signals(df):
     df = df.copy()
-    # Use binary signal to avoid neutral state during exact equality
-    # 1 = Bullish (Fast > Slow), -1 = Bearish (Fast <= Slow)
-    df["Signal"] = np.where(df["MA_Fast"] > df["MA_Slow"], 1, -1)
-    df["Crossover"] = df["Signal"].diff()
+    signal = pd.Series(np.nan, index=df.index, dtype=float)
+    valid_mask = df["MA_Fast"].notna() & df["MA_Slow"].notna()
+
+    # Keep the signal neutral until both MAs are actually available.
+    signal.loc[valid_mask] = np.where(
+        df.loc[valid_mask, "MA_Fast"] > df.loc[valid_mask, "MA_Slow"],
+        1,
+        -1,
+    )
+
+    df["Signal"] = signal
+    df["Crossover"] = df["Signal"].diff().fillna(0)
+    df.loc[~valid_mask, "Crossover"] = 0
     return df
 
 # ---------- Master Function ----------

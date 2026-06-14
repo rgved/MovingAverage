@@ -149,6 +149,13 @@ with st.sidebar.expander("Pipeline Logs", expanded=False):
     log_content = st.session_state.get("pipeline_logs", "No logs yet.")
     st.code(log_content, language="text")
 
+# Cache-clear button — forces Streamlit to recompute all crossovers from fresh data
+if st.sidebar.button("🔄 Clear Cache & Refresh", help="Use this if crossover dates look stale after a data update."):
+    st.cache_data.clear()
+    st.session_state.scr_start_date = None
+    st.session_state.scr_end_date = None
+    st.rerun()
+
 st.sidebar.markdown("---")
 st.sidebar.header("Filters & Sorting")
 
@@ -259,25 +266,102 @@ def load_all_price_data(tf: str, data_mtime: float) -> dict:
 # Scans ALL MA pair combinations to find the most recent crossover per stock.
 # Used in default (non-screener) mode.
 
+# Increment this when crossover logic changes to force Streamlit cache bust.
+_CROSSOVER_LOGIC_VERSION = 3   # v3: convergence-safe EMA + direct diff sign-change
+
 # All valid MA pairs to scan (fast < slow)
 _FAST_MAS = [5, 10, 12, 20, 50]
 _SLOW_MAS = [20, 26, 50, 100, 200]
 _ALL_MA_PAIRS = [(f, s) for f in _FAST_MAS for s in _SLOW_MAS if f < s]
 _ALL_MA_TYPES = ["EMA", "SMA"]
 
+
+def _ema_min_periods(span: int) -> int:
+    """Minimum bars needed before EWM is considered converged.
+
+    EWM with alpha=2/(span+1) retains (1-alpha)^k weight from bar k bars ago.
+    We wait until the oldest bar contributes <1% of total weight — i.e.
+    (1-alpha)^k < 0.01  =>  k > log(0.01)/log(1-alpha).
+    This is roughly 2.3*span for small alpha.  We cap at 3*span for safety.
+    The key effect: for EMA200, min_periods jumps from 200 to ~461, so stocks
+    with fewer than 461 rows will show NaN for EMA200 instead of a fake
+    unconverged value that can produce spurious crossovers.
+    """
+    import math
+    alpha = 2.0 / (span + 1)
+    if alpha >= 1:
+        return span
+    k = math.ceil(math.log(0.01) / math.log(1.0 - alpha))
+    return max(span, min(k, span * 3))  # at least span, at most 3*span
+
+
+def _compute_ma(close: pd.Series, span: int, ma_type: str) -> pd.Series:
+    """Compute a moving average.
+    EMA uses a convergence-safe min_periods (see _ema_min_periods) so that
+    unconverged early values are NaN instead of producing fake crossovers.
+    SMA uses the window size as min_periods (standard behaviour).
+    """
+    if ma_type == "EMA":
+        return close.ewm(span=span, min_periods=_ema_min_periods(span), adjust=False).mean()
+    else:
+        return close.rolling(span, min_periods=span).mean()
+
+
+def compute_crossover_series(
+    ma_fast: pd.Series, ma_slow: pd.Series,
+) -> tuple[pd.Series, pd.Series]:
+    """Detect MA crossovers on the EXACT bar they occur with no off-by-one error.
+
+    Method: work directly on the difference (fast - slow) instead of discretising
+    to a ±1 signal first.  A crossover is marked on bar i when:
+      - both MAs are valid on bar i AND bar i-1, AND
+      - (fast[i] - slow[i]) has a different sign from (fast[i-1] - slow[i-1]).
+
+    This avoids the off-by-one that arises from diff()-ing a ±1 signal when the
+    previous bar's signal value is NaN (first valid bar edge case).
+
+    Returns ``(signal, crossover)`` where:
+      - ``signal``    is the regime: 1.0 = bullish, -1.0 = bearish, NaN = no data.
+      - ``crossover`` is ±2 on the exact bar the regime flips, 0 elsewhere.
+    """
+    both_valid  = ma_fast.notna() & ma_slow.notna()
+    prev_valid  = both_valid.shift(1).fillna(False)
+
+    # Regime signal (NaN where data is missing)
+    signal = pd.Series(np.nan, index=ma_fast.index, dtype=float)
+    signal.loc[both_valid] = np.where(
+        ma_fast[both_valid] > ma_slow[both_valid], 1.0, -1.0
+    )
+
+    # Difference series — sign change = crossover
+    diff     = (ma_fast - ma_slow).astype(float)
+    prev_diff = diff.shift(1)
+
+    crossover = pd.Series(0.0, index=ma_fast.index)
+    # Bullish: fast crossed ABOVE slow (diff went from negative to positive)
+    bull = both_valid & prev_valid & (prev_diff < 0) & (diff > 0)
+    # Bearish: fast crossed BELOW slow (diff went from positive to negative)
+    bear = both_valid & prev_valid & (prev_diff > 0) & (diff < 0)
+    crossover[bull] =  2.0
+    crossover[bear] = -2.0
+
+    return signal, crossover
+
+
 @st.cache_data
 def calculate_crossovers(stock_list: tuple, tf: str, years: int,
-                         data_mtime: float, reports_mtime: float) -> dict:
+                         data_mtime: float, reports_mtime: float,
+                         logic_version: int = _CROSSOVER_LOGIC_VERSION) -> dict:
     """
     Calculate the most recent MA crossover for each stock by scanning ALL
-    MA pair combinations (fast/slow × EMA/SMA).
+    MA pair combinations (fast/slow x EMA/SMA).
 
     Returns the most recent crossover from ANY pair, along with which
     MA type and pair produced it.
 
     stock_list MUST be a tuple so Streamlit can hash it as a cache key.
     data_mtime + reports_mtime auto-invalidate the cache when the pipeline
-    writes new data.
+    writes new data.  logic_version busts the cache when crossover logic changes.
     """
     from concurrent.futures import ThreadPoolExecutor, as_completed
 
@@ -294,15 +378,10 @@ def calculate_crossovers(stock_list: tuple, tf: str, years: int,
 
             for fast, slow in _ALL_MA_PAIRS:
                 for m_type in _ALL_MA_TYPES:
-                    if m_type == "EMA":
-                        ma_fast = df["Close"].ewm(span=fast, adjust=False).mean()
-                        ma_slow = df["Close"].ewm(span=slow, adjust=False).mean()
-                    else:
-                        ma_fast = df["Close"].rolling(fast).mean()
-                        ma_slow = df["Close"].rolling(slow).mean()
+                    ma_fast = _compute_ma(df["Close"], fast, m_type)
+                    ma_slow = _compute_ma(df["Close"], slow, m_type)
 
-                    raw_signal     = np.where(ma_fast > ma_slow, 1, -1)
-                    crossover_diff = pd.Series(raw_signal).diff().fillna(0)
+                    _, crossover_diff = compute_crossover_series(ma_fast, ma_slow)
 
                     temp_df = df.copy()
                     temp_df["Crossover"] = crossover_diff.values
@@ -380,15 +459,10 @@ def calculate_crossovers_with_pair(
             best_crossover_data = None
 
             for m_type in types_to_check:
-                if m_type == "EMA":
-                    ma_fast = df["Close"].ewm(span=fast, adjust=False).mean()
-                    ma_slow = df["Close"].ewm(span=slow, adjust=False).mean()
-                else:
-                    ma_fast = df["Close"].rolling(fast).mean()
-                    ma_slow = df["Close"].rolling(slow).mean()
+                ma_fast = _compute_ma(df["Close"], fast, m_type)
+                ma_slow = _compute_ma(df["Close"], slow, m_type)
 
-                raw_signal     = np.where(ma_fast > ma_slow, 1, -1)
-                crossover_diff = pd.Series(raw_signal).diff().fillna(0)
+                _, crossover_diff = compute_crossover_series(ma_fast, ma_slow)
 
                 temp_df = df.copy()
                 temp_df["Crossover"] = crossover_diff.values
@@ -483,15 +557,10 @@ def build_crossover_event_rows(
 
             for fast, slow in ma_pairs:
                 for m_type in types_to_check:
-                    if m_type == "EMA":
-                        ma_fast = df["Close"].ewm(span=fast, adjust=False).mean()
-                        ma_slow = df["Close"].ewm(span=slow, adjust=False).mean()
-                    else:
-                        ma_fast = df["Close"].rolling(fast).mean()
-                        ma_slow = df["Close"].rolling(slow).mean()
+                    ma_fast = _compute_ma(df["Close"], fast, m_type)
+                    ma_slow = _compute_ma(df["Close"], slow, m_type)
 
-                    raw_signal = np.where(ma_fast > ma_slow, 1, -1)
-                    crossover_diff = pd.Series(raw_signal).diff().fillna(0)
+                    _, crossover_diff = compute_crossover_series(ma_fast, ma_slow)
 
                     temp_df = df.copy()
                     temp_df["Crossover"] = crossover_diff.values
@@ -610,15 +679,12 @@ def build_download_csv(tf, ma_type_filter, crossover_filter, fast_mas, slow_mas,
             for col_name, (fast, slow, ma_type, direction) in ma_pairs.items():
                 temp_df = df.copy()
 
-                if ma_type == "EMA":
-                    temp_df["MA_Fast"] = temp_df["Close"].ewm(span=fast, adjust=False).mean()
-                    temp_df["MA_Slow"] = temp_df["Close"].ewm(span=slow, adjust=False).mean()
-                else:
-                    temp_df["MA_Fast"] = temp_df["Close"].rolling(fast).mean()
-                    temp_df["MA_Slow"] = temp_df["Close"].rolling(slow).mean()
+                temp_df["MA_Fast"] = _compute_ma(temp_df["Close"], fast, ma_type)
+                temp_df["MA_Slow"] = _compute_ma(temp_df["Close"], slow, ma_type)
 
-                temp_df["Signal"] = np.where(temp_df["MA_Fast"] > temp_df["MA_Slow"], 1, -1)
-                temp_df["Crossover"] = temp_df["Signal"].diff()
+                temp_df["Signal"], temp_df["Crossover"] = compute_crossover_series(
+                    temp_df["MA_Fast"], temp_df["MA_Slow"]
+                )
 
                 if direction == "Bullish":
                     signal_triggered = temp_df["Crossover"] == 2
@@ -968,7 +1034,9 @@ latest_screen_date = max(
 latest_screen_date = pd.Timestamp(latest_screen_date).normalize()
 
 if st.session_state.scr_start_date is None:
-    st.session_state.scr_start_date = latest_screen_date.date().isoformat()
+    # Default: show last 7 calendar days so recent crossovers are visible without manual date picking
+    default_start = (latest_screen_date - pd.DateOffset(days=6)).normalize()
+    st.session_state.scr_start_date = default_start.date().isoformat()
 if st.session_state.scr_end_date is None:
     st.session_state.scr_end_date = latest_screen_date.date().isoformat()
 
@@ -1027,8 +1095,8 @@ if refine_btn:
     else:
         scr_start_date_input, scr_end_date_input = scr_date_range_input
         selected_days = (scr_end_date_input - scr_start_date_input).days + 1
-        if selected_days < 1 or selected_days > 5:
-            st.warning("Date range must be between 1 and 5 days.")
+        if selected_days < 1 or selected_days > 30:
+            st.warning("Date range must be between 1 and 30 days.")
         elif (
             scr_fast_ma_input != "Any"
             and scr_slow_ma_input != "Any"
@@ -1047,7 +1115,9 @@ if refine_btn:
 
 if refresh_btn:
     st.session_state.screener_active = False
-    st.session_state.scr_start_date = latest_screen_date.date().isoformat()
+    # Reset to default 7-day window
+    default_start = (latest_screen_date - pd.DateOffset(days=6)).normalize()
+    st.session_state.scr_start_date = default_start.date().isoformat()
     st.session_state.scr_end_date = latest_screen_date.date().isoformat()
     st.session_state.scr_signal = "Both"
     st.session_state.scr_ma_type = "Both"
@@ -1240,8 +1310,18 @@ if has_selection:
     
     # ---------- SCENARIO CONTROLS (WHAT-IF MODE) ----------
     st.markdown("### 🔎 Strategy to Display")
-    strategy_mode = st.radio("Mode", ["Optimized (Best Historical)", "Custom Scenario"], horizontal=True, label_visibility="collapsed")
-    
+    strategy_mode = st.radio(
+        "Mode",
+        ["Match Screener", "Backtest Optimal", "Custom Scenario"],
+        horizontal=True,
+        label_visibility="collapsed",
+        help=(
+            "Match Screener: chart uses the same MA pair the table reported — crossovers will always match.\n"
+            "Backtest Optimal: chart uses the historically best pair from the optimization report.\n"
+            "Custom Scenario: pick any MA type and pair."
+        ),
+    )
+
     if strategy_mode == "Custom Scenario":
         sc1, sc2, sc3 = st.columns(3)
         with sc1:
@@ -1249,22 +1329,64 @@ if has_selection:
         with sc2:
             fast_viz = st.selectbox("Fast MA", options=[5, 10, 12, 20, 50, 100], index=2)
         with sc3:
-            slow_viz = st.selectbox("Slow MA", options=[20, 26, 50, 100, 200], index=1)
-        
+            # Include 200 so user can replicate TradingView EMA 50/200 setup
+            slow_viz = st.selectbox("Slow MA", options=[20, 26, 50, 100, 200], index=4)
+
         if fast_viz >= slow_viz:
             st.warning("Fast MA must be smaller than Slow MA")
             st.stop()
+
+    elif strategy_mode == "Backtest Optimal":
+        # ---------------------------------------------------------------
+        # BACKTEST OPTIMAL MODE: Read the MA pair from the BACKTEST REPORT
+        # (reports_cache top row = best historical pair).
+        # This pair is NOT guaranteed to match the screener's crossover — use
+        # "Match Screener" if you want the chart and table to agree.
+        # ---------------------------------------------------------------
+        report_raw_name = selected_symbol.replace(".", "_")
+        report_row = reports_cache.get(report_raw_name)
+
+        fast_viz, slow_viz, ma_type_viz = 12, 26, "EMA"  # safe defaults
+
+        if report_row is not None:
+            try:
+                rpt_ma_type = str(report_row.get("MA_Type", "EMA")).strip()
+                rpt_ma_pair = str(report_row.get("MA_Pair", "12/26")).strip()
+                rpt_fast, rpt_slow = map(int, rpt_ma_pair.split("/"))
+                if rpt_fast < rpt_slow and rpt_ma_type in ("EMA", "SMA"):
+                    fast_viz    = rpt_fast
+                    slow_viz    = rpt_slow
+                    ma_type_viz = rpt_ma_type
+            except Exception:
+                pass  # keep safe defaults
+
+        st.caption(
+            f"📊 Showing **{ma_type_viz} {fast_viz}/{slow_viz}** "
+            f"(backtest-optimal pair from report — may differ from screener pair)."
+        )
+
     else:
-        best_ma_type = summary_df.iloc[selected_row_idx]["Crossover MA Type"]
-        best_ma_pair = summary_df.iloc[selected_row_idx]["Crossover MA Pair"]
-        
+        # ---------------------------------------------------------------
+        # MATCH SCREENER MODE (default): Use the EXACT same MA pair that
+        # the screener table used to detect the crossover shown in the row.
+        # This guarantees the chart arrow always aligns with the table date.
+        # ---------------------------------------------------------------
+        fast_viz, slow_viz, ma_type_viz = 12, 26, "EMA"  # safe defaults
         try:
-            fast_viz, slow_viz = map(int, best_ma_pair.split("/"))
-            # "Both" is not a valid MA type for plotting — default to EMA
-            ma_type_viz = best_ma_type if best_ma_type in ("EMA", "SMA") else "EMA"
-        except:
-            fast_viz, slow_viz = 12, 26
-            ma_type_viz = "EMA"
+            screener_pair = str(summary_df.iloc[selected_row_idx].get("Crossover MA Pair", "12/26"))
+            screener_type = str(summary_df.iloc[selected_row_idx].get("Crossover MA Type", "EMA"))
+            s_fast, s_slow = map(int, screener_pair.split("/"))
+            if s_fast < s_slow and screener_type in ("EMA", "SMA"):
+                fast_viz    = s_fast
+                slow_viz    = s_slow
+                ma_type_viz = screener_type
+        except Exception:
+            pass  # keep safe defaults
+
+        st.caption(
+            f"📊 Showing **{ma_type_viz} {fast_viz}/{slow_viz}** "
+            f"(same pair as screener table — crossover markers will match the table date)."
+        )
 
     
     # ---------- LOAD PRICE DATA (from preloaded cache) ----------
@@ -1325,15 +1447,12 @@ if has_selection:
         df.reset_index(inplace=True)
 
     # ---------- APPLY SELECTED MOVING AVERAGES ----------
-    if ma_type_viz == "EMA":
-        df["MA_Fast"] = df["Close"].ewm(span=fast_viz, adjust=False).mean()
-        df["MA_Slow"] = df["Close"].ewm(span=slow_viz, adjust=False).mean()
-    else:
-        df["MA_Fast"] = df["Close"].rolling(fast_viz).mean()
-        df["MA_Slow"] = df["Close"].rolling(slow_viz).mean()
+    df["MA_Fast"] = _compute_ma(df["Close"], fast_viz, ma_type_viz)
+    df["MA_Slow"] = _compute_ma(df["Close"], slow_viz, ma_type_viz)
 
-    df["Signal"] = np.where(df["MA_Fast"] > df["MA_Slow"], 1, -1)
-    df["Crossover"] = df["Signal"].diff()
+    df["Signal"], df["Crossover"] = compute_crossover_series(
+        df["MA_Fast"], df["MA_Slow"]
+    )
 
     # Update variables for title later
     scenario_ma_type = ma_type_viz 

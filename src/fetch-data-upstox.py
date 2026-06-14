@@ -29,8 +29,8 @@ with open(os.path.join(BASE_DIR, "upstox_symbol_map.json")) as f:
     SYMBOL_MAP = json.load(f)
 
 # ── Constants ────────────────────────────────────────────────────────────────
-BOOTSTRAP_DAYS = 92          # ~3 months for a fresh fetch
-STALE_THRESHOLD_DAYS = 14    # if last date is older than this, do a full re-fetch
+BOOTSTRAP_DAYS = 1000         # ~2.7 years — EMA 200 needs ~660 trading days to converge (<1% seed influence)
+STALE_THRESHOLD_DAYS = 30    # if last date is older than this, do a full re-fetch
 INCREMENTAL_BUFFER_DAYS = 5  # fetch a few extra days as buffer for weekends/holidays
 
 
@@ -81,7 +81,7 @@ def _load_existing(symbol: str) -> pd.DataFrame | None:
         return None
 
 
-def fetch_history(symbol: str, instrument_key: str):
+def fetch_history(symbol: str, instrument_key: str, force_bootstrap: bool = False):
     """
     Smart fetch with two modes:
 
@@ -100,11 +100,12 @@ def fetch_history(symbol: str, instrument_key: str):
     existing_df = _load_existing(symbol)
 
     # ── Decide fetch mode ────────────────────────────────────────────────────
-    if existing_df is None or existing_df.empty:
-        # BOOTSTRAP: no data at all
+    if force_bootstrap or existing_df is None or existing_df.empty:
+        # BOOTSTRAP: no data at all or forced rebuild
         mode = "bootstrap"
+        existing_df = None  # Ensure we don't merge with corrupted data
         from_date = today - timedelta(days=BOOTSTRAP_DAYS)
-        print(f"[BOOTSTRAP ] {symbol}: no existing data -> fetching {BOOTSTRAP_DAYS}d ({from_date} -> {today})")
+        print(f"[BOOTSTRAP ] {symbol}: no existing data or forced rebuild -> fetching {BOOTSTRAP_DAYS}d ({from_date} -> {today})")
 
     else:
         last_stored_date = existing_df["Date"].max().date()
@@ -147,6 +148,20 @@ def fetch_history(symbol: str, instrument_key: str):
         # Ensure both sides are tz-naive before concat
         existing_df["Date"] = pd.to_datetime(existing_df["Date"]).dt.tz_localize(None)
         new_df["Date"] = new_df["Date"].dt.tz_localize(None) if new_df["Date"].dt.tz is not None else new_df["Date"]
+        
+        # ── Self-Healing Overlap Check ───────────────────────────────────────
+        overlap = pd.merge(existing_df[["Date", "Close"]], new_df[["Date", "Close"]], on="Date", suffixes=("_stored", "_new"))
+        if not overlap.empty:
+            first_overlap = overlap.iloc[0]
+            stored_price = first_overlap["Close_stored"]
+            new_price = first_overlap["Close_new"]
+            
+            # If price differs by > 5%, Upstox applied a corporate action adjustment
+            if stored_price > 0 and abs(new_price - stored_price) / stored_price > 0.05:
+                print(f"[CORRUPTION] {symbol}: Corporate action detected! Stored: {stored_price}, New: {new_price}.")
+                print(f"             Discarding corrupted CSV and triggering full rebuild...")
+                return fetch_history(symbol, instrument_key, force_bootstrap=True)
+                
         combined = pd.concat([existing_df, new_df], ignore_index=True)
         # Normalise to date-only for dedup (Upstox candles are start-of-day anyway)
         combined["Date"] = combined["Date"].dt.normalize()

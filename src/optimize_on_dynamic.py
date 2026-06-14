@@ -1,6 +1,7 @@
 import pandas as pd
 import numpy as np
 from backtest import backtest_strategy
+from features import compute_ema, compute_sma, generate_signals
 
 # ---------- Helper: Compute Volatility ----------
 def compute_volatility(df, window=20):
@@ -23,20 +24,15 @@ def compute_trend_strength(df, window=20):
 def add_moving_averages(df, ma_type="EMA", fast=10, slow=20):
     df = df.copy()
     if ma_type.upper() == "EMA":
-        df["MA_Fast"] = df["Close"].ewm(span=fast, adjust=False).mean()
-        df["MA_Slow"] = df["Close"].ewm(span=slow, adjust=False).mean()
+        df["MA_Fast"] = compute_ema(df, "Close", fast)
+        df["MA_Slow"] = compute_ema(df, "Close", slow)
     elif ma_type.upper() == "SMA":
-        df["MA_Fast"] = df["Close"].rolling(window=fast).mean()
-        df["MA_Slow"] = df["Close"].rolling(window=slow).mean()
+        df["MA_Fast"] = compute_sma(df, "Close", fast)
+        df["MA_Slow"] = compute_sma(df, "Close", slow)
     else:
         raise ValueError("ma_type must be EMA or SMA")
 
-    # Signals
-    df["Signal"] = 0
-    df.loc[df["MA_Fast"] > df["MA_Slow"], "Signal"] = 1
-    df.loc[df["MA_Fast"] < df["MA_Slow"], "Signal"] = -1
-    df["Crossover"] = df["Signal"].diff()
-    return df
+    return generate_signals(df)
 
 # ---------- Smart MA Selector ----------
 def select_ma_type(vol, trend, vol_threshold=0.01, trend_threshold=0.05):

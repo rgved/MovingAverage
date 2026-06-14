@@ -1,27 +1,21 @@
 import pandas as pd
 from backtest import backtest_strategy
+from features import compute_ema, compute_sma, generate_signals
 
 # ---------- Function to Recompute MAs ----------
 def add_moving_averages(df, ma_type="EMA", fast=10, slow=20):
     df = df.copy()
 
-    # Calculate moving averages
     if ma_type.upper() == "SMA":
-        df["MA_Fast"] = df["Close"].rolling(window=fast).mean()
-        df["MA_Slow"] = df["Close"].rolling(window=slow).mean()
+        df["MA_Fast"] = compute_sma(df, "Close", fast)
+        df["MA_Slow"] = compute_sma(df, "Close", slow)
     elif ma_type.upper() == "EMA":
-        df["MA_Fast"] = df["Close"].ewm(span=fast, adjust=False).mean()
-        df["MA_Slow"] = df["Close"].ewm(span=slow, adjust=False).mean()
+        df["MA_Fast"] = compute_ema(df, "Close", fast)
+        df["MA_Slow"] = compute_ema(df, "Close", slow)
     else:
         raise ValueError("ma_type must be SMA or EMA")
 
-    # Generate signals and crossovers
-    df["Signal"] = 0
-    df.loc[df["MA_Fast"] > df["MA_Slow"], "Signal"] = 1
-    df.loc[df["MA_Fast"] < df["MA_Slow"], "Signal"] = -1
-    df["Crossover"] = df["Signal"].diff()
-
-    return df
+    return generate_signals(df)
 
 # ---------- Optimizer Function ----------
 def optimize_ma_windows(symbol="INFY.NS", ma_pairs=None, ma_type="EMA"):
